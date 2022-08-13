@@ -1,7 +1,7 @@
 const express = require("express");
 
 const { body, check } = require("express-validator");
-const { Register } = require("../controller/User");
+const { Register, addListWaitingFriend } = require("../controller/User");
 const UserTestSaika = require("../model/User");
 require("../utils/auth");
 const router = express.Router();
@@ -32,7 +32,10 @@ router.post(
 
 router.post("/login", login);
 router.get("/user/:id", passport.authenticate("jwt", { session: false }), getUsers);
-router.post("/chats", passport.authenticate("jwt", { session: false }), buatRoom);
+router.post("/chats", buatRoom);
+router.delete("/chat/:idroom", passport.authenticate("jwt", { session: false }), hapusRoom);
 router.get("/chats_detail/:idroom", passport.authenticate("jwt", { session: false }), getRoom);
 router.put("/chats_detail/:idroom", passport.authenticate("jwt", { session: false }), keluarRoom);
+
+router.put("/user/friend/:iduser", addListWaitingFriend);
 module.exports = router;

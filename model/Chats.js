@@ -24,6 +24,8 @@ const ChatsSaika = mongoose.model("ChatsSaika", {
     {
       iduser: { type: String },
       usernameuser: { type: String },
+      namauser: { type: String },
+      kondisi: { type: String },
       waktu: {
         type: String,
       },

@@ -47,6 +47,21 @@ io.on("connection", (socket) => {
   socket.on("join_room", (data) => {
     socket.join(data);
   });
+
+  socket.on("data_user", (data) => {
+    socket.join(data);
+  });
+
+  socket.on("update_data_user", async (data) => {
+    console.log(data);
+    const dataUserUpdateSend = await UserTestSaika.findOne({ _id: data.pengirim });
+    const dataUserUpdateReceive = await UserTestSaika.findOne({ _id: data.penerima });
+    if (dataUserUpdateReceive) {
+      socket.to(data.pengirim).emit("data_user_send", dataUserUpdateSend);
+      socket.to(data.penerima).emit("data_user_receive", dataUserUpdateReceive);
+    }
+  });
+
   socket.on("send_message", async (data) => {
     const dataChat = await ChatsSaika.findOne({ idroom: data.idroom });
     const dataUser = await UserTestSaika.findOne({ _id: Object(data.iduser) });
@@ -74,7 +89,9 @@ io.on("connection", (socket) => {
         }
       ).then(async () => {
         const dataChatNew = await ChatsSaika.findOne({ idroom: data.idroom });
+
         socket.to(data.idroom).emit("pesan_terima", dataChatNew);
+        // socket.broadcast.emit("pesan_terima", dataChatNew);
       });
     }
   });
@@ -87,14 +104,58 @@ io.on("connection", (socket) => {
   });
 
   socket.on("anggota_keluar", async (data) => {
-    const cekUser = await UserTestSaika.findOne({ iduser: Object(data.iduser) });
+    const cekUser = await UserTestSaika.findOne({ _id: data.iduser });
+    const cekRoom = await ChatsSaika.findOne({ idroom: data.idroom });
     if (cekUser) {
-      socket.to(data.idroom).emit("anggota_keluar_notif", cekUser.nama);
+      let dataKirim = {
+        kondisi: "keluar",
+        namauser: cekUser.nama,
+      };
+      ChatsSaika.updateOne(
+        { idroom: data.idroom },
+        {
+          $set: {
+            chats: [dataKirim, ...cekRoom.chats],
+          },
+        }
+      ).then(async () => {
+        const dataChatNew = await ChatsSaika.findOne({ idroom: data.idroom });
+        socket.to(data.idroom).emit("pesan_terima", dataChatNew);
+      });
+    }
+  });
+
+  socket.on("anggota_masuk", async (data) => {
+    const cekUser = await UserTestSaika.findOne({ _id: data.iduser });
+    const cekRoom = await ChatsSaika.findOne({ idroom: data.idroom });
+    if (cekUser) {
+      let dataChats = cekRoom.chats.map((el) => {
+        if (el.kondisi === "masuk") {
+          return el.iduser;
+        }
+      });
+      if (!dataChats.includes(data.iduser)) {
+        let dataKirim = {
+          iduser: data.iduser,
+          kondisi: "masuk",
+          namauser: cekUser.nama,
+        };
+        ChatsSaika.updateOne(
+          { idroom: data.idroom },
+          {
+            $set: {
+              chats: [dataKirim, ...cekRoom.chats],
+            },
+          }
+        ).then(async () => {
+          const dataChatNew = await ChatsSaika.findOne({ idroom: data.idroom });
+          socket.to(data.idroom).emit("pesan_terima", dataChatNew);
+        });
+      }
     }
   });
 
   socket.on("keluar_room", async (data) => {
-    console.log(data);
     const cekRoom = await ChatsSaika.findOne({ idroom: data.idroom });
     if (cekRoom) {
       let sisaAnggota = cekRoom.anggota.filter((el) => el.iduser !== data.iduser);
@@ -111,10 +172,10 @@ io.on("connection", (socket) => {
         if (cekAnggotaRoom.anggota.length === 0) {
           ChatsSaika.deleteOne({ idroom: data.idroom }).then(() => {
             const dataChatNew = null;
-            socket.to(data.idroom).emit("data_anggota", dataChatNew);
+            socket.to(data.idroom).emit("data_anggota_sisa", dataChatNew);
           });
         } else {
-          socket.to(data.idroom).emit("data_anggota", cekAnggotaRoom);
+          socket.to(data.idroom).emit("data_anggota_sisa", cekAnggotaRoom);
         }
       });
     }

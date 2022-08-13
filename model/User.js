@@ -28,6 +28,33 @@ const UserTestSaika = mongoose.model("UserTestSaika", {
   refresh_token: {
     type: String,
   },
+  listFriends: [
+    {
+      iduser: { type: String },
+      nama: { type: String },
+      username: { type: String },
+      fotoUser: { type: String },
+      status: { type: String },
+    },
+  ],
+  listWaitingSend: [
+    {
+      iduser: { type: String },
+      nama: { type: String },
+      username: { type: String },
+      fotoUser: { type: String },
+      status: { type: String },
+    },
+  ],
+  listWaitingReceive: [
+    {
+      iduser: { type: String },
+      nama: { type: String },
+      username: { type: String },
+      fotoUser: { type: String },
+      status: { type: String },
+    },
+  ],
 });
 
 // const user1 = new UserTestSaika({
