@@ -35,6 +35,7 @@ const UserTestSaika = mongoose.model("UserTestSaika", {
       username: { type: String },
       fotoUser: { type: String },
       status: { type: String },
+      urutan: { type: Number },
     },
   ],
   listWaitingSend: [

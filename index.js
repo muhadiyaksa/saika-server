@@ -17,6 +17,7 @@ const router = require("./routes/index");
 
 const cors = require("cors");
 const { isObjectIdOrHexString } = require("mongoose");
+const PersonalChatSaika = require("./model/PersonalChats");
 
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
@@ -49,6 +50,7 @@ io.on("connection", (socket) => {
   });
 
   socket.on("data_user", (data) => {
+    console.log(data);
     socket.join(data);
   });
 
@@ -178,6 +180,122 @@ io.on("connection", (socket) => {
           socket.to(data.idroom).emit("data_anggota_sisa", cekAnggotaRoom);
         }
       });
+    }
+  });
+
+  socket.on("send_message_pc", async (data) => {
+    const dataChat = await PersonalChatSaika.findOne({ _id: data.idchat });
+    const dataUser = await UserTestSaika.findOne({ _id: Object(data.iduser) });
+    let bulan = new Date().getMonth();
+    let tahun = new Date().getFullYear();
+    let tanggal = new Date().getDate();
+    let jam = new Date().getHours();
+    let menit = new Date().getMinutes();
+    let tanggalKirim = `${tanggal} ${namesSetMonth(bulan, "id-ID")} ${tahun}`;
+    let jamKirim = `${setIndeksHours(jam.toString())}:${setIndeksHours(menit.toString())}`;
+    let dataKirim = {
+      iduser: data.iduser,
+      usernameuser: dataUser.username,
+      waktu: jamKirim,
+      tanggal: tanggalKirim,
+      pesan: data.pesanKirim,
+    };
+    if (dataChat) {
+      PersonalChatSaika.updateOne(
+        { _id: data.idchat },
+        {
+          $set: {
+            status: "active",
+            chats: [dataKirim, ...dataChat.chats],
+          },
+        }
+      ).then(async () => {
+        const dataChatNew = await PersonalChatSaika.findOne({ _id: data.idchat });
+        if (dataChatNew) {
+          socket.to(dataChatNew.iduserpertama).to(dataChatNew.iduserkedua).emit("pesan_terima_pc", dataChatNew);
+        }
+        // socket.broadcast.emit("pesan_terima", dataChatNew);
+      });
+    }
+  });
+
+  socket.on("active_message", async (data) => {
+    //data.iduser: pengirimPesan
+    const dataChat = await PersonalChatSaika.findOne({ _id: data.idchat });
+    if (dataChat) {
+      PersonalChatSaika.updateOne(
+        { _id: data.idchat },
+        {
+          $set: {
+            status: "active",
+          },
+        }
+      ).then(async () => {
+        //LOGIKANYA SALAH
+        const personalChat1 = await PersonalChatSaika.find({ iduserpertama: data.iduser });
+        const personalChat2 = await PersonalChatSaika.find({ iduserkedua: data.iduser });
+        const dataUser = await UserTestSaika.findOne({ _id: data.iduser });
+
+        let dataGabung = [...personalChat1, ...personalChat2];
+        if (dataUser) {
+          let dataFriend = dataUser.listFriends.map((el) => el.iduser);
+
+          let hasil = dataGabung.map((el) => {
+            if (el.iduserpertama === data.iduser) {
+              let dataArray = {
+                idchat: el._id,
+                idfriend: el.iduserpertama,
+                status: el.status,
+                chat: el.chats[0].iduser,
+              };
+              return dataArray;
+            } else {
+              let dataArray = {
+                idchat: el._id,
+                idfriend: el.iduserkedua,
+                status: el.status,
+                chat: el.chats[0].iduser,
+              };
+
+              return dataArray;
+            }
+          });
+          console.log(hasil);
+          socket.to(dataChat.iduserpertama).to(dataChat.iduserkedua).emit("pesan_aktif", hasil);
+        }
+      });
+    }
+  });
+
+  socket.on("close_active_message", async (data) => {
+    const dataChat = await PersonalChatSaika.findOne({ _id: data.idchat });
+
+    const personalChat1 = await PersonalChatSaika.find({ iduserpertama: data.iduser });
+    const personalChat2 = await PersonalChatSaika.find({ iduserkedua: data.iduser });
+    const dataUser = await UserTestSaika.findOne({ _id: data.iduser });
+
+    let dataGabung = [...personalChat1, ...personalChat2];
+    if (dataUser) {
+      let hasil = dataGabung.map((el) => {
+        if (el.iduserpertama === data.iduser) {
+          let dataArray = {
+            idchat: el._id,
+            idfriend: el.iduserkedua,
+            status: el.status,
+            chat: el.chats[0].iduser,
+          };
+          return dataArray;
+        } else {
+          let dataArray = {
+            idchat: el._id,
+            idfriend: el.iduserpertama,
+            status: el.status,
+            chat: el.chats[0].iduser,
+          };
+          return dataArray;
+        }
+      });
+      socket.to(data.iduser).emit("pesan_aktif", hasil);
     }
   });
 });

@@ -80,4 +80,96 @@ const addListWaitingFriend = async (req, res) => {
   }
 };
 
-module.exports = { Register, addListWaitingFriend };
+const rejectWaitingFriend = async (req, res) => {
+  const dataUser = await UserTestSaika.findOne({ _id: req.params.iduser });
+
+  //req.param = yang nolak
+  //req.body = yang ditolak
+  if (dataUser) {
+    const dataFilter = dataUser.listWaitingReceive.filter((el) => el.iduser !== req.body.iduserreq);
+    const dataUserReject = await UserTestSaika.findOne({ _id: req.body.iduserreq });
+
+    if (dataUserReject) {
+      const dataFilterWaitingSend = dataUserReject.listWaitingSend.filter((el) => el.iduser !== req.params.iduser);
+
+      UserTestSaika.updateOne(
+        {
+          _id: req.params.iduser,
+        },
+        {
+          $set: {
+            listWaitingReceive: [...dataFilter],
+          },
+        }
+      ).then(() => {
+        UserTestSaika.updateOne(
+          {
+            _id: req.body.iduserreq,
+          },
+          {
+            $set: {
+              listWaitingSend: [...dataFilterWaitingSend],
+            },
+          }
+        ).then(() => {
+          res.send({ iduserpenolak: req.params.iduser, iduserditolak: req.body.iduserreq, status: "success" });
+        });
+      });
+    }
+  }
+};
+
+const acceptWaitingFriend = async (req, res) => {
+  const dataUser = await UserTestSaika.findOne({ _id: req.params.iduser });
+  if (dataUser) {
+    const dataFilter = dataUser.listWaitingReceive.filter((el) => el.iduser === req.body.iduserreq);
+    const dataFilterWithOut = dataUser.listWaitingReceive.filter((el) => el.iduser !== req.body.iduserreq);
+    const dataUserAccept = await UserTestSaika.findOne({ _id: req.body.iduserreq });
+
+    if (dataUserAccept) {
+      const dataFilterFriendSend = dataUserAccept.listWaitingSend.filter((el) => el.iduser === req.params.iduser);
+      const dataFilterFriendSendWithOut = dataUserAccept.listWaitingSend.filter((el) => el.iduser !== req.params.iduser);
+      UserTestSaika.updateOne(
+        {
+          _id: req.params.iduser,
+        },
+        {
+          $set: {
+            listWaitingReceive: [...dataFilterWithOut],
+            listFriends: [...dataUser.listFriends, ...dataFilter],
+          },
+        }
+      ).then(() => {
+        UserTestSaika.updateOne(
+          {
+            _id: req.body.iduserreq,
+          },
+          {
+            $set: {
+              listWaitingSend: [...dataFilterFriendSendWithOut],
+              listFriends: [...dataUserAccept.listFriends, ...dataFilterFriendSend],
+            },
+          }
+        ).then(() => {
+          res.send({ iduserpenerima: req.params.iduser, iduserditerima: req.body.iduserreq, status: "success" });
+        });
+      });
+    }
+  }
+};
+
+const getFriendProfile = async (req, res) => {
+  const dataTeman = await UserTestSaika.findOne({ _id: req.params.iduser });
+  if (dataTeman) {
+    let dataMasuk = {
+      iduser: req.params.iduser,
+      jumlahTeman: dataTeman.listFriends.length,
+      nama: dataTeman.nama,
+      email: dataTeman.email,
+      username: dataTeman.username,
+      fotoProfil: dataTeman.fotoUser.fotoUrl,
+    };
+    res.send(dataMasuk);
+  }
+};
+module.exports = { Register, addListWaitingFriend, rejectWaitingFriend, acceptWaitingFriend, getFriendProfile };
