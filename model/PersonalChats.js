@@ -13,6 +13,7 @@ const PersonalChatSaika = mongoose.model("PersonalChatSaika", {
     fotoProfi: { type: String },
   },
   status: { type: String },
+  statusNotif: { type: String },
   chats: [
     {
       iduser: { type: String },

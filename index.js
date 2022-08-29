@@ -16,7 +16,6 @@ const { Server } = require("socket.io");
 const router = require("./routes/index");
 
 const cors = require("cors");
-const { isObjectIdOrHexString } = require("mongoose");
 const PersonalChatSaika = require("./model/PersonalChats");
 
 app.use(bodyParser.json());
@@ -206,6 +205,7 @@ io.on("connection", (socket) => {
         {
           $set: {
             status: "active",
+            statusNotif: "active",
             chats: [dataKirim, ...dataChat.chats],
           },
         }
@@ -228,6 +228,7 @@ io.on("connection", (socket) => {
         {
           $set: {
             status: "active",
+            statusNotif: "active",
           },
         }
       ).then(async () => {
@@ -246,7 +247,9 @@ io.on("connection", (socket) => {
                 idchat: el._id,
                 idfriend: el.iduserpertama,
                 status: el.status,
+                statusNotif: el.statusNotif,
                 chat: el.chats[0].iduser,
+                username: el.chats[0].usernameuser,
               };
               return dataArray;
             } else {
@@ -254,7 +257,9 @@ io.on("connection", (socket) => {
                 idchat: el._id,
                 idfriend: el.iduserkedua,
                 status: el.status,
+                statusNotif: el.statusNotif,
                 chat: el.chats[0].iduser,
+                username: el.chats[0].usernameuser,
               };
 
               return dataArray;
@@ -282,6 +287,7 @@ io.on("connection", (socket) => {
             idchat: el._id,
             idfriend: el.iduserkedua,
             status: el.status,
+            statusNotif: el.statusNotif,
             chat: el.chats[0].iduser,
           };
           return dataArray;
@@ -290,6 +296,7 @@ io.on("connection", (socket) => {
             idchat: el._id,
             idfriend: el.iduserpertama,
             status: el.status,
+            statusNotif: el.statusNotif,
             chat: el.chats[0].iduser,
           };
           return dataArray;

@@ -8,7 +8,7 @@ const router = express.Router();
 const passport = require("passport");
 const { login, getUsers } = require("../handler");
 const { buatRoom, addPesan, hapusRoom, getRoom, keluarRoom } = require("../controller/Chats");
-const { checkRoomPersonalChat, getPersonalChat, getAllPersonalChat, updateStatusPersonalChat } = require("../controller/PersonalChat");
+const { checkRoomPersonalChat, getPersonalChat, getAllPersonalChat, updateStatusPersonalChat, updateNotifStatusPersonalChat } = require("../controller/PersonalChat");
 router.post(
   "/register",
   [
@@ -46,4 +46,5 @@ router.get("/user/friend/:iduser", getFriendProfile);
 router.post("/chat/room/:iduser", checkRoomPersonalChat);
 router.get("/chat/all/:iduser", getAllPersonalChat);
 router.put("/chat/all/:idchat", updateStatusPersonalChat);
+router.put("/chat/notifstatus/:idchat", updateNotifStatusPersonalChat);
 module.exports = router;

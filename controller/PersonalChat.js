@@ -52,6 +52,7 @@ const getPersonalChat = async (req, res) => {
           let dataMasuk = {
             idfriend: el.iduserkedua,
             status: el.chats[0].iduser !== req.params.iduser ? "active" : "null",
+            statusNotif: el.chats[0].iduser !== req.params.iduser ? "active" : "null",
           };
 
           return dataMasuk;
@@ -61,6 +62,7 @@ const getPersonalChat = async (req, res) => {
           let dataMasuk = {
             idfriend: el.iduserpertama,
             status: el.chats[0].iduser !== req.params.iduser ? "active" : "null",
+            statusNotif: el.chats[0].iduser !== req.params.iduser ? "active" : "null",
           };
           return dataMasuk;
         }
@@ -87,7 +89,9 @@ const getAllPersonalChat = async (req, res) => {
             idchat: el._id,
             idfriend: el.iduserkedua,
             status: el.status,
+            statusNotif: el.statusNotif,
             chat: el.chats[0].iduser,
+            username: el.chats[0].usernameuser,
           };
           return dataArray;
         }
@@ -97,7 +101,9 @@ const getAllPersonalChat = async (req, res) => {
             idchat: el._id,
             idfriend: el.iduserpertama,
             status: el.status,
+            statusNotif: el.statusNotif,
             chat: el.chats[0].iduser,
+            username: el.chats[0].usernameuser,
           };
           return dataArray;
         }
@@ -118,6 +124,7 @@ const updateStatusPersonalChat = async (req, res) => {
       {
         $set: {
           status: "null",
+          statusNotif: "null",
         },
       }
     ).then(() => {
@@ -126,4 +133,23 @@ const updateStatusPersonalChat = async (req, res) => {
   }
 };
 
-module.exports = { checkRoomPersonalChat, getPersonalChat, getAllPersonalChat, updateStatusPersonalChat };
+const updateNotifStatusPersonalChat = async (req, res) => {
+  console.log(req.params);
+  const personalChat = await PersonalChatSaika.findOne({ _id: req.params.idchat });
+  if (personalChat) {
+    PersonalChatSaika.updateOne(
+      {
+        _id: req.params.idchat,
+      },
+      {
+        $set: {
+          statusNotif: "null",
+        },
+      }
+    ).then(() => {
+      res.send({ status: "success" });
+    });
+  }
+};
+
+module.exports = { checkRoomPersonalChat, getPersonalChat, getAllPersonalChat, updateStatusPersonalChat, updateNotifStatusPersonalChat };
