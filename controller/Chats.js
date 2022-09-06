@@ -22,7 +22,6 @@ const buatRoom = async (req, res) => {
     });
   } else {
     const cekAnggotaRuangDiskusi = await ChatsSaika.findOne({ kategori: req.body.kategori });
-    //udah ada nih ruang chat , anggotanya 1
     if (cekAnggotaRuangDiskusi) {
       let dataAnggota = cekAnggotaRuangDiskusi.anggota.map((el) => el.iduser);
       if (dataAnggota.includes(req.body.iduser)) {

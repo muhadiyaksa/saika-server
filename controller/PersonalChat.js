@@ -1,16 +1,17 @@
 const PersonalChatSaika = require("../model/PersonalChats");
 const UserTestSaika = require("../model/User");
+const { namesSetMonth, setIndeksHours } = require("../utils/numberFormat");
 
 const checkRoomPersonalChat = async (req, res) => {
-  const checkRoomPengirim = await PersonalChatSaika.findOne({ idpengirim: req.params.iduser, idpenerima: req.body.iduserreceive });
-  const checkRoomPenerima = await PersonalChatSaika.findOne({ idpengirim: req.body.iduserreceive, idpenerima: req.params.iduser });
-
+  const [checkRoomPengirim, checkRoomPenerima] = await Promise.all([
+    PersonalChatSaika.findOne({ idpengirim: req.params.iduser, idpenerima: req.body.iduserreceive }),
+    PersonalChatSaika.findOne({ idpengirim: req.body.iduserreceive, idpenerima: req.params.iduser }),
+  ]);
   if (checkRoomPengirim || checkRoomPenerima) {
     let dataRoom = { ...checkRoomPengirim, ...checkRoomPenerima };
     res.send(dataRoom);
   } else {
-    const userSender = await UserTestSaika.findOne({ _id: req.params.iduser });
-    const userReceiver = await UserTestSaika.findOne({ _id: req.body.iduserreceive });
+    const [userSender, userReceiver] = await Promise.all([UserTestSaika.findOne({ _id: req.params.iduser }), UserTestSaika.findOne({ _id: req.body.iduserreceive })]);
 
     if (userSender && userReceiver) {
       let dataMasuk = {
@@ -30,20 +31,23 @@ const checkRoomPersonalChat = async (req, res) => {
         chats: [],
       };
       PersonalChatSaika.create({ ...dataMasuk }).then(async () => {
-        const checkRoomPengirim = await PersonalChatSaika.findOne({ idpengirim: req.params.iduser, idpenerima: req.body.iduserreceive });
-        const checkRoomPenerima = await PersonalChatSaika.findOne({ idpengirim: req.body.iduserreceive, idpenerima: req.params.iduser });
-        let dataRoom = { ...checkRoomPengirim, ...checkRoomPenerima };
-        res.send(dataRoom);
+        const [checkRoomPengirim, checkRoomPenerima] = await Promise.all([
+          PersonalChatSaika.findOne({ idpengirim: req.params.iduser, idpenerima: req.body.iduserreceive }),
+          PersonalChatSaika.findOne({ idpengirim: req.body.iduserreceive, idpenerima: req.params.iduser }),
+        ]);
+        if (checkRoomPengirim && checkRoomPenerima) {
+          let dataRoom = { ...checkRoomPengirim, ...checkRoomPenerima };
+          res.send(dataRoom);
+        }
       });
     }
   }
 };
 
 const getPersonalChat = async (req, res) => {
-  const dataUser = await UserTestSaika.findOne({ _id: req.params.iduser });
-  const dataChat = await PersonalChatSaika.find({ iduserpertama: req.params.iduser });
-  const dataChat2 = await PersonalChatSaika.find({ iduserkedua: req.params.iduser });
-  if (dataUser) {
+  const [dataUser, dataChat, dataChat2] = await Promise.all([UserTestSaika.findOne({ _id: req.params.iduser }), PersonalChatSaika.find({ iduserpertama: req.params.iduser }), PersonalChatSaika.find({ iduserkedua: req.params.iduser })]);
+
+  if (dataUser && dataChat && dataChat2) {
     let gabunganDataChat = [...dataChat, ...dataChat2];
     let dataFriend = dataUser.listFriends.map((el) => el.iduser);
     let hasil = gabunganDataChat.map((el) => {
@@ -68,18 +72,19 @@ const getPersonalChat = async (req, res) => {
         }
       }
     });
-    console.log(hasil);
     res.send(hasil);
   }
 };
 
 const getAllPersonalChat = async (req, res) => {
-  const personalChat1 = await PersonalChatSaika.find({ iduserpertama: req.params.iduser });
-  const personalChat2 = await PersonalChatSaika.find({ iduserkedua: req.params.iduser });
-  const dataUser = await UserTestSaika.findOne({ _id: req.params.iduser });
+  const [personalChat1, personalChat2, dataUser] = await Promise.all([
+    PersonalChatSaika.find({ iduserpertama: req.params.iduser }),
+    PersonalChatSaika.find({ iduserkedua: req.params.iduser }),
+    UserTestSaika.findOne({ _id: req.params.iduser }),
+  ]);
 
-  let dataGabung = [...personalChat1, ...personalChat2];
-  if (dataUser) {
+  if (dataUser && personalChat1 && personalChat2) {
+    let dataGabung = [...personalChat1, ...personalChat2];
     let dataFriend = dataUser.listFriends.map((el) => el.iduser);
 
     let hasil = dataGabung.map((el) => {
@@ -109,47 +114,76 @@ const getAllPersonalChat = async (req, res) => {
         }
       }
     });
-    console.log(hasil);
     res.send(hasil);
   }
 };
 
 const updateStatusPersonalChat = async (req, res) => {
-  const personalChat = await PersonalChatSaika.findOne({ _id: req.params.idchat });
-  if (personalChat) {
-    PersonalChatSaika.updateOne(
-      {
-        _id: req.params.idchat,
+  PersonalChatSaika.findOneAndUpdate(
+    {
+      _id: req.params.idchat,
+    },
+    {
+      $set: {
+        status: "null",
+        statusNotif: "null",
       },
-      {
-        $set: {
-          status: "null",
-          statusNotif: "null",
-        },
-      }
-    ).then(() => {
-      res.send({ status: "success" });
-    });
-  }
+    }
+  ).then(() => {
+    res.send({ status: "success" });
+  });
 };
 
 const updateNotifStatusPersonalChat = async (req, res) => {
-  console.log(req.params);
-  const personalChat = await PersonalChatSaika.findOne({ _id: req.params.idchat });
-  if (personalChat) {
-    PersonalChatSaika.updateOne(
-      {
-        _id: req.params.idchat,
+  PersonalChatSaika.findOneAndUpdate(
+    {
+      _id: req.params.idchat,
+    },
+    {
+      $set: {
+        statusNotif: "null",
       },
+    }
+  ).then(() => {
+    res.send({ status: "success" });
+  });
+};
+
+const sendPersonalChats = async (data) => {
+  const [dataChat, dataUser] = await Promise.all([PersonalChatSaika.findOne({ _id: data.idchat }), UserTestSaika.findOne({ _id: Object(data.iduser) })]);
+
+  let bulan = new Date().getMonth();
+  let tahun = new Date().getFullYear();
+  let tanggal = new Date().getDate();
+  let jam = new Date().getHours();
+  let menit = new Date().getMinutes();
+  let tanggalKirim = `${tanggal} ${namesSetMonth(bulan, "id-ID")} ${tahun}`;
+  let jamKirim = `${setIndeksHours(jam.toString())}:${setIndeksHours(menit.toString())}`;
+
+  let dataKirim = {
+    iduser: data.iduser,
+    usernameuser: dataUser.username,
+    waktu: jamKirim,
+    tanggal: tanggalKirim,
+    pesan: data.pesanKirim,
+  };
+
+  if (dataChat && dataUser) {
+    const result = await PersonalChatSaika.findOneAndUpdate(
+      { _id: data.idchat },
       {
         $set: {
-          statusNotif: "null",
+          status: "active",
+          statusNotif: "active",
+          chats: [dataKirim, ...dataChat.chats],
         },
       }
-    ).then(() => {
-      res.send({ status: "success" });
-    });
+    );
+    const dataChatNew = await PersonalChatSaika.findOne({ _id: data.idchat });
+    if (result && dataChatNew) {
+      return { result, dataChatNew };
+    }
   }
 };
 
-module.exports = { checkRoomPersonalChat, getPersonalChat, getAllPersonalChat, updateStatusPersonalChat, updateNotifStatusPersonalChat };
+module.exports = { checkRoomPersonalChat, getPersonalChat, getAllPersonalChat, updateStatusPersonalChat, updateNotifStatusPersonalChat, sendPersonalChats };

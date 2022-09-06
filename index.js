@@ -6,7 +6,9 @@ const cookieParser = require("cookie-parser");
 require("./utils/db");
 const UserTestSaika = require("./model/User");
 const ChatsSaika = require("./model/Chats");
-const { namesSetMonth, setIndeksHours } = require("./utils/numberFormat");
+const { returnFormatDate } = require("./utils/numberFormat");
+const { sendPersonalChats } = require("./controller/PersonalChat");
+const { sendChats } = require("./controller/Chats");
 dotenv.config();
 const http = require("http");
 const app = express();
@@ -49,51 +51,49 @@ io.on("connection", (socket) => {
   });
 
   socket.on("data_user", (data) => {
-    console.log(data);
     socket.join(data);
   });
 
   socket.on("update_data_user", async (data) => {
-    console.log(data);
-    const dataUserUpdateSend = await UserTestSaika.findOne({ _id: data.pengirim });
-    const dataUserUpdateReceive = await UserTestSaika.findOne({ _id: data.penerima });
-    if (dataUserUpdateReceive) {
+    const [dataUserUpdateSend, dataUserUpdateReceive] = await Promise.all([UserTestSaika.findOne({ _id: data.pengirim }), UserTestSaika.findOne({ _id: data.penerima })]);
+
+    if (dataUserUpdateReceive && dataUserUpdateSend) {
       socket.to(data.pengirim).emit("data_user_send", dataUserUpdateSend);
       socket.to(data.penerima).emit("data_user_receive", dataUserUpdateReceive);
     }
   });
 
   socket.on("send_message", async (data) => {
-    const dataChat = await ChatsSaika.findOne({ idroom: data.idroom });
-    const dataUser = await UserTestSaika.findOne({ _id: Object(data.iduser) });
-    let bulan = new Date().getMonth();
-    let tahun = new Date().getFullYear();
-    let tanggal = new Date().getDate();
-    let jam = new Date().getHours();
-    let menit = new Date().getMinutes();
-    let tanggalKirim = `${tanggal} ${namesSetMonth(bulan, "id-ID")} ${tahun}`;
-    let jamKirim = `${setIndeksHours(jam.toString())}:${setIndeksHours(menit.toString())}`;
+    // const result =
+    //PR
+    const [dataChat, dataUser] = await Promise.all([ChatsSaika.findOne({ idroom: data.idroom }), UserTestSaika.findOne({ _id: Object(data.iduser) })]);
+
+    const formatDate = returnFormatDate();
     let dataKirim = {
       iduser: data.iduser,
       usernameuser: dataUser.username,
-      waktu: jamKirim,
-      tanggal: tanggalKirim,
+      waktu: formatDate.jamKirim,
+      tanggal: formatDate.tanggalKirim,
       pesan: data.pesanKirim,
     };
+
     if (dataChat) {
-      ChatsSaika.updateOne(
+      const result = await ChatsSaika.findOneAndUpdate(
         { idroom: data.idroom },
         {
           $set: {
             chats: [dataKirim, ...dataChat.chats],
           },
         }
-      ).then(async () => {
+      );
+      if (result) {
         const dataChatNew = await ChatsSaika.findOne({ idroom: data.idroom });
+        return { value: true, dataChatNew };
+      }
+    }
 
-        socket.to(data.idroom).emit("pesan_terima", dataChatNew);
-        // socket.broadcast.emit("pesan_terima", dataChatNew);
-      });
+    if (result) {
+      socket.to(data.idroom).emit("pesan_terima", result.dataChatNew);
     }
   });
 
@@ -183,39 +183,9 @@ io.on("connection", (socket) => {
   });
 
   socket.on("send_message_pc", async (data) => {
-    const dataChat = await PersonalChatSaika.findOne({ _id: data.idchat });
-    const dataUser = await UserTestSaika.findOne({ _id: Object(data.iduser) });
-    let bulan = new Date().getMonth();
-    let tahun = new Date().getFullYear();
-    let tanggal = new Date().getDate();
-    let jam = new Date().getHours();
-    let menit = new Date().getMinutes();
-    let tanggalKirim = `${tanggal} ${namesSetMonth(bulan, "id-ID")} ${tahun}`;
-    let jamKirim = `${setIndeksHours(jam.toString())}:${setIndeksHours(menit.toString())}`;
-    let dataKirim = {
-      iduser: data.iduser,
-      usernameuser: dataUser.username,
-      waktu: jamKirim,
-      tanggal: tanggalKirim,
-      pesan: data.pesanKirim,
-    };
-    if (dataChat) {
-      PersonalChatSaika.updateOne(
-        { _id: data.idchat },
-        {
-          $set: {
-            status: "active",
-            statusNotif: "active",
-            chats: [dataKirim, ...dataChat.chats],
-          },
-        }
-      ).then(async () => {
-        const dataChatNew = await PersonalChatSaika.findOne({ _id: data.idchat });
-        if (dataChatNew) {
-          socket.to(dataChatNew.iduserpertama).to(dataChatNew.iduserkedua).emit("pesan_terima_pc", dataChatNew);
-        }
-        // socket.broadcast.emit("pesan_terima", dataChatNew);
-      });
+    const result = await sendPersonalChats(data);
+    if (result.result) {
+      socket.to(result.dataChatNew.iduserpertama).to(result.dataChatNew.iduserkedua).emit("pesan_terima_pc", result.dataChatNew);
     }
   });
 

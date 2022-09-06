@@ -37,4 +37,16 @@ const setIndeksHours = (hours) => {
     return `${hours}`;
   }
 };
-module.exports = { numberFormat, namesOfMonth, namesOfMonthLocal, namesSetMonth, setIndeksHours };
+
+const returnFormatDate = () => {
+  let bulan = new Date().getMonth();
+  let tahun = new Date().getFullYear();
+  let tanggal = new Date().getDate();
+  let jam = new Date().getHours();
+  let menit = new Date().getMinutes();
+  let tanggalKirim = `${tanggal} ${namesSetMonth(bulan, "id-ID")} ${tahun}`;
+  let jamKirim = `${setIndeksHours(jam.toString())}:${setIndeksHours(menit.toString())}`;
+
+  return { tanggalKirim, jamKirim };
+};
+module.exports = { numberFormat, namesOfMonth, namesOfMonthLocal, namesSetMonth, setIndeksHours, returnFormatDate };
