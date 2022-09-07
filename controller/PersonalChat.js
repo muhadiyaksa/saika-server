@@ -1,6 +1,6 @@
 const PersonalChatSaika = require("../model/PersonalChats");
 const UserTestSaika = require("../model/User");
-const { namesSetMonth, setIndeksHours } = require("../utils/numberFormat");
+const { returnFormatDate } = require("../utils/numberFormat");
 
 const checkRoomPersonalChat = async (req, res) => {
   const [checkRoomPengirim, checkRoomPenerima] = await Promise.all([
@@ -152,19 +152,13 @@ const updateNotifStatusPersonalChat = async (req, res) => {
 const sendPersonalChats = async (data) => {
   const [dataChat, dataUser] = await Promise.all([PersonalChatSaika.findOne({ _id: data.idchat }), UserTestSaika.findOne({ _id: Object(data.iduser) })]);
 
-  let bulan = new Date().getMonth();
-  let tahun = new Date().getFullYear();
-  let tanggal = new Date().getDate();
-  let jam = new Date().getHours();
-  let menit = new Date().getMinutes();
-  let tanggalKirim = `${tanggal} ${namesSetMonth(bulan, "id-ID")} ${tahun}`;
-  let jamKirim = `${setIndeksHours(jam.toString())}:${setIndeksHours(menit.toString())}`;
+  const formatDate = returnFormatDate();
 
   let dataKirim = {
     iduser: data.iduser,
     usernameuser: dataUser.username,
-    waktu: jamKirim,
-    tanggal: tanggalKirim,
+    waktu: formatDate.jamKirim,
+    tanggal: formatDate.tanggalKirim,
     pesan: data.pesanKirim,
   };
 
@@ -179,11 +173,89 @@ const sendPersonalChats = async (data) => {
         },
       }
     );
-    const dataChatNew = await PersonalChatSaika.findOne({ _id: data.idchat });
-    if (result && dataChatNew) {
-      return { result, dataChatNew };
+    if (result) {
+      return { result };
     }
   }
 };
 
-module.exports = { checkRoomPersonalChat, getPersonalChat, getAllPersonalChat, updateStatusPersonalChat, updateNotifStatusPersonalChat, sendPersonalChats };
+const activeMessage = async (data) => {
+  const dataChat = await PersonalChatSaika.findOne({ _id: data.idchat });
+  if (dataChat) {
+    let result = await PersonalChatSaika.updateOne(
+      { _id: data.idchat },
+      {
+        $set: {
+          status: "active",
+          statusNotif: "active",
+        },
+      }
+    );
+    if (result) {
+      const [personalChat1, personalChat2, dataUser] = await Promise.all([PersonalChatSaika.find({ iduserpertama: data.iduser }), PersonalChatSaika.find({ iduserkedua: data.iduser }), UserTestSaika.findOne({ _id: data.iduser })]);
+
+      if (dataUser && personalChat2 && personalChat1) {
+        let dataGabung = [...personalChat1, ...personalChat2];
+
+        let hasil = dataGabung.map((el) => {
+          if (el.iduserpertama === data.iduser) {
+            let dataArray = {
+              idchat: el._id,
+              idfriend: el.iduserpertama,
+              status: el.status,
+              statusNotif: el.statusNotif,
+              chat: el.chats[0].iduser,
+              username: el.chats[0].usernameuser,
+            };
+            return dataArray;
+          } else {
+            let dataArray = {
+              idchat: el._id,
+              idfriend: el.iduserkedua,
+              status: el.status,
+              statusNotif: el.statusNotif,
+              chat: el.chats[0].iduser,
+              username: el.chats[0].usernameuser,
+            };
+
+            return dataArray;
+          }
+        });
+        return { value: true, hasil };
+      }
+    }
+  }
+};
+
+const closedMessage = async (data) => {
+  const [personalChat1, personalChat2, dataUser] = await Promise.all([PersonalChatSaika.find({ iduserpertama: data.iduser }), PersonalChatSaika.find({ iduserkedua: data.iduser }), UserTestSaika.findOne({ _id: data.iduser })]);
+
+  if ((dataUser && personalChat1, personalChat2)) {
+    let dataGabung = [...personalChat1, ...personalChat2];
+    let hasil = dataGabung.map((el) => {
+      if (el.iduserpertama === data.iduser) {
+        let dataArray = {
+          idchat: el._id,
+          idfriend: el.iduserkedua,
+          status: el.status,
+          statusNotif: el.statusNotif,
+          chat: el.chats[0].iduser,
+          username: el.chats[0].usernameuser,
+        };
+        return dataArray;
+      } else {
+        let dataArray = {
+          idchat: el._id,
+          idfriend: el.iduserpertama,
+          status: el.status,
+          statusNotif: el.statusNotif,
+          chat: el.chats[0].iduser,
+          username: el.chats[0].usernameuser,
+        };
+        return dataArray;
+      }
+    });
+    return { value: true, hasil };
+  }
+};
+module.exports = { checkRoomPersonalChat, getPersonalChat, getAllPersonalChat, updateStatusPersonalChat, updateNotifStatusPersonalChat, sendPersonalChats, activeMessage, closedMessage };

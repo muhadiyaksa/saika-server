@@ -1,7 +1,7 @@
 const UserTestSaika = require("../model/User");
 const ChatsSaika = require("../model/Chats");
 const crypto = require("crypto");
-
+const { returnFormatDate } = require("../utils/numberFormat");
 const buatRoom = async (req, res) => {
   const cekRuangDiskusi = await ChatsSaika.find({ kategori: req.body.kategori });
   if (cekRuangDiskusi.length === 0) {
@@ -127,26 +127,111 @@ const getRoom = async (req, res) => {
   }
 };
 
-const addPesan = () => {};
+const addPesan = async (data) => {
+  const [dataChat, dataUser] = await Promise.all([ChatsSaika.findOne({ idroom: data.idroom }), UserTestSaika.findOne({ _id: Object(data.iduser) })]);
 
-const keluarRoom = async (req, res) => {
-  const cekRoom = await ChatsSaika.findOne({ idroom: req.params.idroom });
+  if (dataChat && dataUser) {
+    const formatDate = returnFormatDate();
+    let dataKirim = {
+      iduser: data.iduser,
+      usernameuser: dataUser.username,
+      waktu: formatDate.jamKirim,
+      tanggal: formatDate.tanggalKirim,
+      pesan: data.pesanKirim,
+    };
+    const result = await ChatsSaika.findOneAndUpdate(
+      { idroom: data.idroom },
+      {
+        $set: {
+          chats: [dataKirim, ...dataChat.chats],
+        },
+      }
+    );
+    if (result) {
+      const dataChatNew = await ChatsSaika.findOne({ idroom: data.idroom });
+      return { value: true, dataChatNew };
+    }
+  }
+};
+
+const keluarRoom = async (data) => {
+  const cekRoom = await ChatsSaika.findOne({ idroom: data.idroom });
+
   if (cekRoom) {
-    let sisaAnggota = cekRoom.anggota.filter((el) => el.iduser !== req.body.iduser);
-    // let sisaAnggota =
-    ChatsSaika.updateOne(
-      { idroom: req.params.idroom },
+    let sisaAnggota = cekRoom.anggota.filter((el) => el.iduser !== data.iduser);
+
+    let result = await ChatsSaika.findOneAndUpdate(
+      { idroom: data.idroom },
       {
         $set: {
           anggota: [...sisaAnggota],
         },
       }
-    ).then(async () => {
-      const cekAnggotaRoom = await ChatsSaika.findOne({ idroom: req.params.idroom });
-      if (cekAnggotaRoom.anggota.length === 0) {
-        ChatsSaika.deleteOne({ idroom: req.params.idroom });
+    );
+    if (result?.anggota.length === 0) {
+      let resultRoom = await ChatsSaika.deleteOne({ idroom: data.idroom });
+      if (resultRoom) {
+        return { value: true, dataNew: null };
+      }
+    } else {
+      const resultNew = await ChatsSaika.findOne({ idroom: data.idroom });
+      return { value: true, dataNew: resultNew };
+    }
+  }
+};
+
+const notifKeluar = async (data) => {
+  const [cekUser, cekRoom] = await Promise.all([UserTestSaika.findOne({ _id: data.iduser }), ChatsSaika.findOne({ idroom: data.idroom })]);
+
+  if (cekUser && cekRoom) {
+    let dataKirim = {
+      kondisi: "keluar",
+      namauser: cekUser.nama,
+    };
+
+    let result = await ChatsSaika.findOneAndUpdate(
+      { idroom: data.idroom },
+      {
+        $set: {
+          chats: [dataKirim, ...cekRoom.chats],
+        },
+      }
+    );
+    if (result) {
+      const dataChatNew = await ChatsSaika.findOne({ idroom: data.idroom });
+      return { value: true, dataChatNew };
+    }
+  }
+};
+
+const notifMasuk = async (data) => {
+  const [cekUser, cekRoom] = await Promise.all([UserTestSaika.findOne({ _id: data.iduser }), ChatsSaika.findOne({ idroom: data.idroom })]);
+
+  if (cekUser && cekRoom) {
+    let dataChats = cekRoom.chats.map((el) => {
+      if (el.kondisi === "masuk") {
+        return el.iduser;
       }
     });
+    if (!dataChats.includes(data.iduser)) {
+      let dataKirim = {
+        iduser: data.iduser,
+        kondisi: "masuk",
+        namauser: cekUser.nama,
+      };
+      let result = await ChatsSaika.findOneAndUpdate(
+        { idroom: data.idroom },
+        {
+          $set: {
+            chats: [dataKirim, ...cekRoom.chats],
+          },
+        }
+      );
+      if (result) {
+        const dataChatNew = await ChatsSaika.findOne({ idroom: data.idroom });
+        return { value: true, dataChatNew };
+      }
+    }
   }
 };
 
@@ -156,4 +241,4 @@ const hapusRoom = (req, res) => {
   });
 };
 
-module.exports = { buatRoom, addPesan, hapusRoom, getRoom, keluarRoom };
+module.exports = { buatRoom, addPesan, hapusRoom, getRoom, keluarRoom, notifKeluar, notifMasuk };
