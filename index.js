@@ -48,11 +48,13 @@ const io = new Server(server, {
 });
 
 io.on("connection", (socket) => {
+  let dataUser, joinRoom;
   socket.on("join_room", (data) => {
+    joinRoom = data;
     socket.join(data);
   });
-
   socket.on("data_user", (data) => {
+    dataUser = data;
     socket.join(data);
   });
 
@@ -120,6 +122,35 @@ io.on("connection", (socket) => {
     if (result?.value) {
       socket.to(data.iduser).emit("pesan_aktif", result.hasil);
     }
+  });
+
+  socket.on("disconnect", async function () {
+    let data = {
+      iduser: undefined,
+      idroom: undefined,
+    };
+
+    if (dataUser !== undefined) {
+      data.iduser = dataUser;
+    }
+    if (joinRoom !== undefined) {
+      data.idroom = joinRoom;
+    }
+    let waitData = new Promise((fulfill, reject) => {
+      if (data.iduser !== undefined && data.idroom !== undefined) {
+        return fulfill(data);
+      }
+    });
+    waitData.then(async (res) => {
+      // console.log(res);
+      const resultAnggota = await keluarRoom(data);
+      // const result = notifKeluar(res);
+      if (resultAnggota?.value) {
+        socket.to(data.idroom).emit("data_anggota_sisa", resultAnggota.dataNew);
+      }
+    });
+
+    // console.log(waitData);
   });
 });
 

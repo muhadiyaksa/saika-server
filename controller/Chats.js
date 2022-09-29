@@ -2,6 +2,7 @@ const UserTestSaika = require("../model/User");
 const ChatsSaika = require("../model/Chats");
 const crypto = require("crypto");
 const { returnFormatDate } = require("../utils/numberFormat");
+
 const buatRoom = async (req, res) => {
   const cekRuangDiskusi = await ChatsSaika.find({ kategori: req.body.kategori });
   if (cekRuangDiskusi.length === 0) {

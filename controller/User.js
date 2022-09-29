@@ -172,4 +172,52 @@ const getFriendProfile = async (req, res) => {
     res.send(dataMasuk);
   }
 };
-module.exports = { Register, addListWaitingFriend, rejectWaitingFriend, acceptWaitingFriend, getFriendProfile };
+
+const updateProfil = async (req, res) => {
+  console.log(req.body);
+  UserTestSaika.updateOne(
+    {
+      _id: req.body.iduserreq,
+    },
+    {
+      $set: {
+        nama: req.body.nama,
+        username: req.body.username,
+      },
+    }
+  )
+    .then((result) => {
+      res.send({ message: "success" });
+    })
+    .catch((err) => {
+      res.send({ message: "failed", status: err.response.status });
+    });
+};
+
+const updatePassword = async (req, res) => {
+  const hashedPasswordChecked = await bcrypt.hash(req.body.passwordConfirm, 10);
+  const errors = validationResult(req);
+  if (!errors.isEmpty()) {
+    res.send(errors);
+  } else {
+    UserTestSaika.updateOne(
+      {
+        _id: req.body.iduserreq,
+      },
+      {
+        $set: {
+          password: req.body.passwordNew,
+          konfirmPassword: hashedPasswordChecked,
+        },
+      }
+    )
+      .then(() => {
+        res.send({ message: "success" });
+      })
+      .catch((err) => {
+        res.send({ message: "failed", status: err.response.status });
+      });
+  }
+};
+
+module.exports = { Register, addListWaitingFriend, rejectWaitingFriend, acceptWaitingFriend, getFriendProfile, updateProfil, updatePassword };
