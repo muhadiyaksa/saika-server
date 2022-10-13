@@ -5,7 +5,7 @@ require("../utils/auth");
 const router = express.Router();
 const passport = require("passport");
 const { login, getUsers } = require("../handler");
-const { buatRoom, addPesan, hapusRoom, getRoom, keluarRoom } = require("../controller/Chats");
+const { buatRoom, addPesan, hapusRoom, getRoom, keluarRoom, joinRoom } = require("../controller/Chats");
 const { checkRoomPersonalChat, getPersonalChat, getAllPersonalChat, updateStatusPersonalChat, updateNotifStatusPersonalChat } = require("../controller/PersonalChat");
 const { validateRegist, validatePassword } = require("../utils/validator");
 
@@ -16,6 +16,7 @@ router.post("/chats", buatRoom);
 router.delete("/chat/:idroom", passport.authenticate("jwt", { session: false }), hapusRoom);
 router.get("/chats_detail/:idroom", passport.authenticate("jwt", { session: false }), getRoom);
 router.put("/chats_detail/:idroom", passport.authenticate("jwt", { session: false }), keluarRoom);
+router.post("/rejoinchats/:idroom", passport.authenticate("jwt", { session: false }), joinRoom);
 
 router.put("/user/friend/:iduser", addListWaitingFriend);
 router.put("/user/reject-friend/:iduser", rejectWaitingFriend);

@@ -49,6 +49,7 @@ const io = new Server(server, {
 
 io.on("connection", (socket) => {
   let dataUser, joinRoom;
+
   socket.on("join_room", (data) => {
     joinRoom = data;
     socket.join(data);
@@ -64,6 +65,14 @@ io.on("connection", (socket) => {
     if (dataUserUpdateReceive && dataUserUpdateSend) {
       socket.to(data.pengirim).emit("data_user_send", dataUserUpdateSend);
       socket.to(data.penerima).emit("data_user_receive", dataUserUpdateReceive);
+    }
+  });
+
+  socket.on("cek_anggota", async (data) => {
+    const dataAnggotaUpdate = await ChatsSaika.findOne({ idroom: data });
+    console.log(dataAnggotaUpdate);
+    if (dataAnggotaUpdate) {
+      socket.to(data).emit("anggota_update", dataAnggotaUpdate.anggota);
     }
   });
 
@@ -144,9 +153,10 @@ io.on("connection", (socket) => {
     waitData.then(async (res) => {
       // console.log(res);
       const resultAnggota = await keluarRoom(data);
-      // const result = notifKeluar(res);
+      const resultNotif = notifKeluar(res);
       if (resultAnggota?.value) {
-        socket.to(data.idroom).emit("data_anggota_sisa", resultAnggota.dataNew);
+        socket.to(res.idroom).emit("data_anggota_sisa", resultAnggota.dataNew);
+        socket.to(res.idroom).emit("pesan_terima", resultNotif.dataChatNew);
       }
     });
 

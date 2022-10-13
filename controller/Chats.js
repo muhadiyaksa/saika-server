@@ -120,11 +120,35 @@ const buatRoom = async (req, res) => {
   //   }
   // }
 };
-
+const joinRoom = async (req, res) => {
+  const cekRoom = await ChatsSaika.findOne({ idroom: req.params.idroom });
+  if (cekRoom) {
+    let dataUser = {
+      iduser: req.body.iduser,
+      fotoUser: req.body.fotoUser,
+      namauser: req.body.namauser,
+      usernameuser: req.body.usernameuser,
+    };
+    ChatsSaika.updateOne(
+      { idroom: req.params.idroom },
+      {
+        $set: {
+          anggota: [...cekRoom.anggota, dataUser],
+        },
+      }
+    ).then(() => {
+      res.send({ status: "finish", idroom: cekRoom.idroom });
+    });
+  } else {
+    res.sendStatus(404);
+  }
+};
 const getRoom = async (req, res) => {
   const cekRoom = await ChatsSaika.findOne({ idroom: req.params.idroom });
   if (cekRoom) {
     res.send(cekRoom);
+  } else {
+    res.sendStatus(404);
   }
 };
 
@@ -169,12 +193,15 @@ const keluarRoom = async (data) => {
         },
       }
     );
-    if (result?.anggota.length === 0) {
+    if (sisaAnggota.length === 0) {
       let resultRoom = await ChatsSaika.deleteOne({ idroom: data.idroom });
       if (resultRoom) {
         return { value: true, dataNew: null };
       }
     } else {
+      console.log("kesini kali ya");
+      console.log(result.anggota.length);
+      console.log(result.anggota);
       const resultNew = await ChatsSaika.findOne({ idroom: data.idroom });
       return { value: true, dataNew: resultNew };
     }
@@ -242,4 +269,4 @@ const hapusRoom = (req, res) => {
   });
 };
 
-module.exports = { buatRoom, addPesan, hapusRoom, getRoom, keluarRoom, notifKeluar, notifMasuk };
+module.exports = { buatRoom, addPesan, hapusRoom, getRoom, keluarRoom, notifKeluar, notifMasuk, joinRoom };
