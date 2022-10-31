@@ -195,11 +195,14 @@ const updateProfil = async (req, res) => {
 };
 
 const updatePassword = async (req, res) => {
-  const hashedPasswordChecked = await bcrypt.hash(req.body.passwordConfirm, 10);
+  console.log(req.body);
+
   const errors = validationResult(req);
   if (!errors.isEmpty()) {
+    console.log(errors);
     res.send(errors);
   } else {
+    const hashedPasswordChecked = await bcrypt.hash(req.body.passwordConfirm, 10);
     UserTestSaika.updateOne(
       {
         _id: req.body.iduserreq,

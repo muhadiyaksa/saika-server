@@ -70,7 +70,6 @@ io.on("connection", (socket) => {
 
   socket.on("cek_anggota", async (data) => {
     const dataAnggotaUpdate = await ChatsSaika.findOne({ idroom: data });
-    console.log(dataAnggotaUpdate);
     if (dataAnggotaUpdate) {
       socket.to(data).emit("anggota_update", dataAnggotaUpdate.anggota);
     }
@@ -78,7 +77,7 @@ io.on("connection", (socket) => {
 
   socket.on("send_message", async (data) => {
     const result = await addPesan(data);
-    console.log(result);
+
     if (result) {
       socket.to(data.idroom).emit("pesan_terima", result.dataChatNew);
     }
@@ -151,10 +150,11 @@ io.on("connection", (socket) => {
       }
     });
     waitData.then(async (res) => {
-      // console.log(res);
       const resultAnggota = await keluarRoom(data);
-      const resultNotif = notifKeluar(res);
-      if (resultAnggota?.value) {
+      // console.log(resultAnggota.dataNew);
+      const resultNotif = await notifKeluar(res);
+
+      if (resultAnggota?.value === resultNotif?.value) {
         socket.to(res.idroom).emit("data_anggota_sisa", resultAnggota.dataNew);
         socket.to(res.idroom).emit("pesan_terima", resultNotif.dataChatNew);
       }

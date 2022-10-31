@@ -45,7 +45,7 @@ const buatRoom = async (req, res) => {
             namauser: req.body.namauser,
             usernameuser: req.body.usernameuser,
           };
-          console.log(dataUser);
+
           ChatsSaika.updateOne(
             { idroom: cekAnggotaRuangDiskusi.idroom },
             {
@@ -193,15 +193,13 @@ const keluarRoom = async (data) => {
         },
       }
     );
-    if (sisaAnggota.length === 0) {
+
+    if (result.anggota.length === 0) {
       let resultRoom = await ChatsSaika.deleteOne({ idroom: data.idroom });
       if (resultRoom) {
         return { value: true, dataNew: null };
       }
     } else {
-      console.log("kesini kali ya");
-      console.log(result.anggota.length);
-      console.log(result.anggota);
       const resultNew = await ChatsSaika.findOne({ idroom: data.idroom });
       return { value: true, dataNew: resultNew };
     }
@@ -216,7 +214,8 @@ const notifKeluar = async (data) => {
       kondisi: "keluar",
       namauser: cekUser.nama,
     };
-
+    // if (cekRoom.chats[0].kondisi !== dataKirim.kondisi && cekRoom.chats[0].namauser !== dataKirim.namauser) {
+    console.log(dataKirim);
     let result = await ChatsSaika.findOneAndUpdate(
       { idroom: data.idroom },
       {
@@ -229,6 +228,9 @@ const notifKeluar = async (data) => {
       const dataChatNew = await ChatsSaika.findOne({ idroom: data.idroom });
       return { value: true, dataChatNew };
     }
+    // } else {
+    //   console.log("ohhh kesini");
+    // }
   }
 };
 

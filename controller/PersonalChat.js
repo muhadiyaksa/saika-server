@@ -3,12 +3,14 @@ const UserTestSaika = require("../model/User");
 const { returnFormatDate } = require("../utils/numberFormat");
 
 const checkRoomPersonalChat = async (req, res) => {
+  console.log(req.body);
   const [checkRoomPengirim, checkRoomPenerima] = await Promise.all([
     PersonalChatSaika.findOne({ idpengirim: req.params.iduser, idpenerima: req.body.iduserreceive }),
     PersonalChatSaika.findOne({ idpengirim: req.body.iduserreceive, idpenerima: req.params.iduser }),
   ]);
   if (checkRoomPengirim || checkRoomPenerima) {
     let dataRoom = { ...checkRoomPengirim, ...checkRoomPenerima };
+
     res.send(dataRoom);
   } else {
     const [userSender, userReceiver] = await Promise.all([UserTestSaika.findOne({ _id: req.params.iduser }), UserTestSaika.findOne({ _id: req.body.iduserreceive })]);
