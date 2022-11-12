@@ -7,7 +7,8 @@ const passport = require("passport");
 const { login, getUsers } = require("../handler");
 const { buatRoom, addPesan, hapusRoom, getRoom, keluarRoom, joinRoom } = require("../controller/Chats");
 const { checkRoomPersonalChat, getPersonalChat, getAllPersonalChat, updateStatusPersonalChat, updateNotifStatusPersonalChat } = require("../controller/PersonalChat");
-const { validateRegist, validatePassword } = require("../utils/validator");
+const { validateRegist, validatePassword, validateEvent } = require("../utils/validator");
+const { addEvent } = require("../controller/Event");
 
 router.post("/register", validateRegist, Register);
 router.post("/login", login);
@@ -29,4 +30,7 @@ router.post("/chat/room/:iduser", checkRoomPersonalChat);
 router.get("/chat/all/:iduser", getAllPersonalChat);
 router.put("/chat/all/:idchat", updateStatusPersonalChat);
 router.put("/chat/notifstatus/:idchat", updateNotifStatusPersonalChat);
+
+router.post("/event/addevent", validateEvent, addEvent);
+
 module.exports = router;
