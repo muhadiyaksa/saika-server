@@ -1,6 +1,7 @@
 const express = require("express");
 const session = require("express-session");
 const bodyParser = require("body-parser");
+const busboy = require("connect-busboy");
 const dotenv = require("dotenv");
 const cookieParser = require("cookie-parser");
 require("./utils/db");
@@ -23,6 +24,7 @@ const router = require("./routes/index");
 const cors = require("cors");
 
 app.use(bodyParser.json());
+app.use(busboy());
 app.use(bodyParser.urlencoded({ extended: true }));
 const corsOptions = {
   origin: ["http://localhost:3002", "http://localhost:3000"],

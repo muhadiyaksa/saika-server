@@ -41,40 +41,23 @@ const validatePassword = [
 ];
 
 const validateEvent = [
-  body("iduser").custom(async (value) => {
-    const dataUser = await UserTestSaika.findOne({ _id: value });
-    if (!dataUser._id) {
-      throw new Error("Akun belum terdaftar sebagai Pengguna SAIKA");
-    }
-    return true;
-  }),
-  body("eventName").custom(async (value, { req }) => {
-    let dataCek = [value, req.body.eventImage, req.body.eventCategory, req.body.benefits, req.body.description];
+  body("email").custom(async (value) => {
+    const dataUser = await UserTestSaika.findOne({ email: value });
 
-    if (dataCek.includes("") || dataCek.includes(null) || dataCek.includes(undefined)) {
-      throw new Error("General Info ada yang belum Diisi");
+    if (!dataUser) {
+      throw new Error("Akun belum terdaftar sebagai Pengguna SAIKA");
+    } else {
+      return true;
     }
-    console.log(dataCek);
-    return true;
   }),
-  body("eventDate")
-    .not()
-    .isEmpty()
-    .custom(() => {
-      throw new Error("Event Date harus diisi");
-    }),
-  body("jamMulai")
-    .not()
-    .isEmpty()
-    .custom(() => {
-      throw new Error("Jam Mulai harus diisi");
-    }),
-  body("jamSelesai")
-    .not()
-    .isEmpty()
-    .custom(() => {
-      throw new Error("Jam Selesai harus diisi");
-    }),
+  body("eventName").not().isEmpty().withMessage("Event Date Harus Diisi!"),
+  body("eventImage").not().isEmpty().withMessage("Jam Mulai Harus Diisi!"),
+  body("eventCategory").not().isEmpty().withMessage("Jam Mulai Harus Diisi!"),
+  body("benefits").not().isEmpty().withMessage("Jam Mulai Harus Diisi!"),
+  body("description").not().isEmpty().withMessage("Jam Mulai Harus Diisi!"),
+  body("eventDate").not().isEmpty().withMessage("Event Date Harus Diisi!"),
+  body("eventTimeStart").not().isEmpty().withMessage("Jam Mulai Harus Diisi!"),
+  body("eventTimeFinish").not().isEmpty().withMessage("Jam Selesai Harus Diisi!"),
   body("eventDate").custom(async (value, { req }) => {
     let tahun = new Date().getFullYear(),
       bulan = new Date().getMonth() + 1,
@@ -82,16 +65,44 @@ const validateEvent = [
 
     let dataNow = new Date(`${tahun}-${bulan}-${tanggal}`).getTime() + 604800000;
     let dataSend = new Date(value).getTime();
-    console.log(`${tahun}-${bulan}-${tanggal}`);
-    console.log(value);
-    if (dataSend >= dataNow) {
-      return true;
+    if (!dataSend) {
+      throw new Error("Format tanggal tidak sesuai!");
     } else {
-      throw new Error("Tanggal kegiatan minimal 7 hari setelah hari ini");
+      if (dataSend >= dataNow) {
+        return true;
+      } else {
+        throw new Error("Tanggal kegiatan minimal 7 hari setelah hari ini");
+      }
     }
   }),
-  body("jamSelesai").custom(async (value, { req }) => {
-    let jamMulai;
+  body("paymentType").custom((value, { req }) => {
+    if (value === "bayar") {
+      if (req.body.price === "" || !req.body.price) {
+        throw new Error("Biaya pendaftaran tidak boleh kosong");
+      } else {
+        return true;
+      }
+    } else {
+      return true;
+    }
+  }),
+  body("registrationLink").not().isEmpty().withMessage("Link Registrasi Harus Diisi!"),
+  body("occurenceType").custom(async (value, { req }) => {
+    if (value === "online") {
+      if (req.body.mediaMeet === "" || !req.body.mediaMeet) {
+        throw new Error("Media Acara secara online tidak boleh kosong");
+      } else {
+        return true;
+      }
+    } else if (value === "offline") {
+      if (req.body.location === "" || !req.body.location) {
+        throw new Error("Lokasi Acara secara offline tidak boleh kosong");
+      }
+      if (req.body.address === "" || !req.body.address) {
+        throw new Error("Alamat Acara secara offline tidak boleh kosong");
+      }
+      return true;
+    }
   }),
 ];
 module.exports = { validateRegist, validatePassword, validateEvent };
