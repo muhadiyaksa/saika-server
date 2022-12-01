@@ -31,6 +31,6 @@ router.get("/chat/all/:iduser", getAllPersonalChat);
 router.put("/chat/all/:idchat", updateStatusPersonalChat);
 router.put("/chat/notifstatus/:idchat", updateNotifStatusPersonalChat);
 
-router.post("/event/addevent", addEvent);
+router.post("/event/addevent", validateEvent, addEvent);
 
 module.exports = router;
