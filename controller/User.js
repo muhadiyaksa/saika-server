@@ -1,7 +1,13 @@
 const UserTestSaika = require("../model/User");
 const bcrypt = require("bcrypt");
 const { validationResult } = require("express-validator");
+const cloudinary = require("cloudinary").v2;
 
+cloudinary.config({
+  cloud_name: process.env.CLOUD_NAME,
+  api_key: process.env.API_KEY,
+  api_secret: process.env.API_SECRET,
+});
 const Register = async (req, res) => {
   const errors = validationResult(req);
   if (!errors.isEmpty()) {
@@ -175,23 +181,39 @@ const getFriendProfile = async (req, res) => {
 
 const updateProfil = async (req, res) => {
   console.log(req.body);
-  UserTestSaika.updateOne(
-    {
-      _id: req.body.iduserreq,
-    },
-    {
-      $set: {
-        nama: req.body.nama,
-        username: req.body.username,
+  const options = {
+    use_filename: true,
+    unique_filename: false,
+    overwrite: true,
+  };
+  try {
+    const file = req.files.file;
+    const result = await cloudinary.uploader.upload(file.tempFilePath, options);
+    console.log(result);
+    UserTestSaika.updateOne(
+      {
+        _id: req.body.iduserreq,
       },
-    }
-  )
-    .then((result) => {
-      res.send({ message: "success" });
-    })
-    .catch((err) => {
-      res.send({ message: "failed", status: err.response.status });
-    });
+      {
+        $set: {
+          nama: req.body.nama,
+          username: req.body.username,
+          fotoUser: {
+            fotoNama: `${result.public_id}.${result.format}`,
+            fotoUrl: result.url,
+          },
+        },
+      }
+    )
+      .then((result) => {
+        res.send({ message: "success" });
+      })
+      .catch((err) => {
+        res.send({ message: "failed", status: err.response.status });
+      });
+  } catch (err) {
+    res.send({ message: "failed", status: err.response.status });
+  }
 };
 
 const updatePassword = async (req, res) => {
