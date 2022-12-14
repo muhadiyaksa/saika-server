@@ -2,6 +2,9 @@ const UserTestSaika = require("../model/User");
 const bcrypt = require("bcrypt");
 const { validationResult } = require("express-validator");
 const cloudinary = require("cloudinary").v2;
+const sgMail = require("@sendgrid/mail");
+
+sgMail.setApiKey(process.env.API_KEY_SENDGRID);
 
 cloudinary.config({
   cloud_name: process.env.CLOUD_NAME,
@@ -245,4 +248,27 @@ const updatePassword = async (req, res) => {
   }
 };
 
-module.exports = { Register, addListWaitingFriend, rejectWaitingFriend, acceptWaitingFriend, getFriendProfile, updateProfil, updatePassword };
+const sendUniqueCode = (req, res) => {
+  const errors = validationResult(req);
+  if (!errors.isEmpty()) {
+    console.log(errors);
+    res.send(errors);
+  } else {
+    console.log(process.env.API_KEY_SENDGRID);
+    sgMail
+      .send({
+        to: "muhadiyaksa@gmail.com",
+        from: "aegroup.business@gmail.com",
+        // templateId: "d-1b439eed998c4221994df417a21a00a9",
+        html: "<p>ya</p>",
+        subject: "text",
+        text: "Ini test doang sih",
+      })
+      .then((result) => {
+        console.log(result);
+        res.send({ status: "success" });
+      });
+  }
+};
+
+module.exports = { Register, addListWaitingFriend, rejectWaitingFriend, acceptWaitingFriend, getFriendProfile, updateProfil, updatePassword, sendUniqueCode };

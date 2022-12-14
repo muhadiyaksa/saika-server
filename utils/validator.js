@@ -105,4 +105,17 @@ const validateEvent = [
     }
   }),
 ];
-module.exports = { validateRegist, validatePassword, validateEvent };
+
+const validateUniqueCode = [
+  body("email").custom(async (value) => {
+    const dataUser = await UserTestSaika.findOne({ email: value });
+
+    if (!dataUser) {
+      throw new Error("Email tidak terdaftar sebagai Pengguna SAIKA");
+    } else {
+      return true;
+    }
+  }),
+  check("email", "Email tidak Valid!").isEmail(),
+];
+module.exports = { validateRegist, validatePassword, validateEvent, validateUniqueCode };

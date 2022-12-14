@@ -1,13 +1,13 @@
 const express = require("express");
 
-const { Register, addListWaitingFriend, rejectWaitingFriend, acceptWaitingFriend, getFriendProfile, updatePassword, updateProfil } = require("../controller/User");
+const { Register, addListWaitingFriend, rejectWaitingFriend, acceptWaitingFriend, getFriendProfile, updatePassword, updateProfil, sendUniqueCode } = require("../controller/User");
 require("../utils/auth");
 const router = express.Router();
 const passport = require("passport");
 const { login, getUsers } = require("../handler");
 const { buatRoom, addPesan, hapusRoom, getRoom, keluarRoom, joinRoom } = require("../controller/Chats");
 const { checkRoomPersonalChat, getPersonalChat, getAllPersonalChat, updateStatusPersonalChat, updateNotifStatusPersonalChat } = require("../controller/PersonalChat");
-const { validateRegist, validatePassword, validateEvent } = require("../utils/validator");
+const { validateRegist, validatePassword, validateEvent, validateUniqueCode } = require("../utils/validator");
 const { addEvent } = require("../controller/Event");
 
 router.post("/register", validateRegist, Register);
@@ -24,6 +24,7 @@ router.put("/user/reject-friend/:iduser", rejectWaitingFriend);
 router.put("/user/accept-friend/:iduser", acceptWaitingFriend);
 router.get("/user/friend/:iduser", getFriendProfile);
 router.put("/user/password", validatePassword, updatePassword);
+router.put("/senduniquecode", validateUniqueCode, sendUniqueCode);
 router.put("/user/profil", updateProfil);
 
 router.post("/chat/room/:iduser", checkRoomPersonalChat);
