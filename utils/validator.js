@@ -106,7 +106,7 @@ const validateEvent = [
   }),
 ];
 
-const validateUniqueCode = [
+const validateEmailForUniqueCode = [
   body("email").custom(async (value) => {
     const dataUser = await UserTestSaika.findOne({ email: value });
 
@@ -118,4 +118,48 @@ const validateUniqueCode = [
   }),
   check("email", "Email tidak Valid!").isEmail(),
 ];
-module.exports = { validateRegist, validatePassword, validateEvent, validateUniqueCode };
+
+const validateUniqueCode = [
+  body("email").custom(async (value, { req }) => {
+    const dataUser = await UserTestSaika.findOne({ email: value });
+
+    if (!dataUser) {
+      throw new Error("Email tidak terdaftar sebagai Pengguna SAIKA");
+    } else {
+      if (dataUser.kodeunik !== req.body.kodeunik) {
+        throw new Error("Kode Unik tidak Valid!");
+      } else {
+        return true;
+      }
+    }
+  }),
+];
+
+const validateResetPassword = [
+  body("email").custom(async (value) => {
+    const dataUser = await UserTestSaika.findOne({ email: value });
+
+    if (!dataUser) {
+      throw new Error("Email tidak terdaftar sebagai Pengguna SAIKA");
+    } else {
+      return true;
+    }
+  }),
+  body("kodeunik").custom(async (value, { req }) => {
+    const dataUser = await UserTestSaika.findOne({ email: req.body.email });
+
+    if (dataUser.kodeunik === value) {
+      return true;
+    } else {
+      throw new Error("Kode Unik Tidak Valid");
+    }
+  }),
+  check("passwordNew").isLength({ min: 8 }).withMessage("Password Minimal Karakter adalah 8").matches(/\d/).withMessage("Password Harus Berisi Nomor"),
+  body("passwordConfirm").custom((value, { req }) => {
+    if (value !== req.body.passwordNew) {
+      throw new Error("Konfirmasi Password tidak sama dengan Password Utama");
+    }
+    return true;
+  }),
+];
+module.exports = { validateRegist, validatePassword, validateEvent, validateEmailForUniqueCode, validateUniqueCode, validateResetPassword };

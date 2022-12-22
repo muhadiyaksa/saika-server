@@ -3,6 +3,10 @@ const bcrypt = require("bcrypt");
 const { validationResult } = require("express-validator");
 const cloudinary = require("cloudinary").v2;
 const sgMail = require("@sendgrid/mail");
+const nodemailer = require("nodemailer");
+const handlebars = require("handlebars");
+const fs = require("fs");
+const path = require("path");
 
 sgMail.setApiKey(process.env.API_KEY_SENDGRID);
 
@@ -21,7 +25,7 @@ const Register = async (req, res) => {
       nama: req.body.nama.toLowerCase(),
       username: req.body.username,
       email: req.body.email,
-      password: req.body.password,
+      password: hashedPasswordChecked,
       konfirmPassword: hashedPasswordChecked,
       fotoUser: {
         fotoNama: "",
@@ -189,10 +193,12 @@ const updateProfil = async (req, res) => {
     unique_filename: false,
     overwrite: true,
   };
+
   try {
-    const file = req.files.file;
-    const result = await cloudinary.uploader.upload(file.tempFilePath, options);
-    console.log(result);
+    const dataUser = await UserTestSaika.findOne({ _id: req.body.iduserreq });
+    const file = req.body.uploadFile === "true" ? req.files.file : "";
+    const result = req.body.uploadFile === "true" ? await cloudinary.uploader.upload(file.tempFilePath, options) : "";
+    console.log(dataUser);
     UserTestSaika.updateOne(
       {
         _id: req.body.iduserreq,
@@ -202,8 +208,8 @@ const updateProfil = async (req, res) => {
           nama: req.body.nama,
           username: req.body.username,
           fotoUser: {
-            fotoNama: `${result.public_id}.${result.format}`,
-            fotoUrl: result.url,
+            fotoNama: req.body.uploadFile === "true" ? `${result.public_id}.${result.format}` : dataUser?.fotoUser?.fotoNama,
+            fotoUrl: req.body.uploadFile === "true" ? result.url : dataUser?.fotoUser?.fotoUrl,
           },
         },
       }
@@ -212,9 +218,11 @@ const updateProfil = async (req, res) => {
         res.send({ message: "success" });
       })
       .catch((err) => {
+        console.log(err);
         res.send({ message: "failed", status: err.response.status });
       });
   } catch (err) {
+    console.log(err);
     res.send({ message: "failed", status: err.response.status });
   }
 };
@@ -248,27 +256,122 @@ const updatePassword = async (req, res) => {
   }
 };
 
-const sendUniqueCode = (req, res) => {
+const sendUniqueCode = async (req, res) => {
   const errors = validationResult(req);
   if (!errors.isEmpty()) {
     console.log(errors);
     res.send(errors);
   } else {
-    console.log(process.env.API_KEY_SENDGRID);
-    sgMail
-      .send({
-        to: "muhadiyaksa@gmail.com",
-        from: "aegroup.business@gmail.com",
-        // templateId: "d-1b439eed998c4221994df417a21a00a9",
-        html: "<p>ya</p>",
-        subject: "text",
-        text: "Ini test doang sih",
+    let transporter = nodemailer.createTransport({
+      service: "hotmail",
+      auth: {
+        user: "getsaika@outlook.com", // generated ethereal user
+        pass: "saika@280800", // generated ethereal password
+      },
+    });
+
+    const filePath = path.join(__dirname, "../utils/templateEmail.html");
+    const source = fs.readFileSync(filePath, "utf-8").toString();
+    const template = handlebars.compile(source);
+
+    let huruf = "ABCDEFGHIJKLMNOPQRSTUVWXYZ".split("");
+    let codeRandom = [];
+    for (let i = 0; i < 6; i++) {
+      if (i % 2 === 0) {
+        let random = Math.floor(Math.random() * 25) + 1;
+        codeRandom.push(huruf[random]);
+      } else {
+        let random = Math.floor(Math.random() * 9) + 1;
+        codeRandom.push(random);
+      }
+    }
+    const replacements = {
+      uniqueCode: codeRandom.join(""),
+    };
+    const htmlToSend = template(replacements);
+
+    let details = {
+      from: '"Sahabat Informatika" <getsaika@outlook.com>', // sender address
+      to: req.body.email, // list of receivers
+      subject: "Kode Unik Reset Password Akun SAIKA", // Subject line
+      html: htmlToSend, // html body
+    };
+
+    transporter.sendMail(details, (err) => {
+      if (err) {
+        res.send({ status: err.response.status, message: "Kode Unik gagal Dikirim", err });
+      } else {
+        UserTestSaika.updateOne(
+          {
+            email: req.body.email,
+          },
+          {
+            $set: {
+              kodeunik: codeRandom.join(""),
+            },
+          }
+        )
+          .then(() => {
+            res.send({ status: "success" });
+
+            setTimeout(() => {
+              UserTestSaika.updateOne(
+                {
+                  email: req.body.email,
+                },
+                {
+                  $set: {
+                    kodeunik: null,
+                  },
+                }
+              ).then(() => {
+                console.log("Kode unik telah di reset");
+              });
+            }, 300000);
+          })
+          .catch((err) => {
+            res.send({ message: "failed", status: err.response.status });
+          });
+      }
+    });
+  }
+};
+
+const checkUniqueCode = (req, res) => {
+  const errors = validationResult(req);
+  if (!errors.isEmpty()) {
+    console.log(errors);
+    res.send(errors);
+  } else {
+    res.send({ message: "success" });
+  }
+};
+
+const resetPassword = async (req, res) => {
+  const errors = validationResult(req);
+  if (!errors.isEmpty()) {
+    console.log(errors);
+    res.send(errors);
+  } else {
+    const hashedPasswordChecked = await bcrypt.hash(req.body.passwordConfirm, 10);
+    UserTestSaika.updateOne(
+      {
+        email: req.body.email,
+      },
+      {
+        $set: {
+          password: hashedPasswordChecked,
+          konfirmPassword: hashedPasswordChecked,
+        },
+      }
+    )
+      .then(() => {
+        res.send({ message: "success" });
       })
-      .then((result) => {
-        console.log(result);
-        res.send({ status: "success" });
+      .catch((err) => {
+        res.send({ message: "failed", status: err.response.status });
       });
   }
 };
 
-module.exports = { Register, addListWaitingFriend, rejectWaitingFriend, acceptWaitingFriend, getFriendProfile, updateProfil, updatePassword, sendUniqueCode };
+module.exports = { Register, addListWaitingFriend, rejectWaitingFriend, acceptWaitingFriend, getFriendProfile, updateProfil, updatePassword, sendUniqueCode, checkUniqueCode, resetPassword };

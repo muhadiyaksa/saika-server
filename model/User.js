@@ -25,6 +25,7 @@ const UserTestSaika = mongoose.model("UserTestSaika", {
   },
   password: { type: String, required: true },
   konfirmPassword: { type: String },
+  kodeunik: { type: String },
   refresh_token: {
     type: String,
   },
