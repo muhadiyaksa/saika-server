@@ -21,7 +21,9 @@ const validateRegist = [
 ];
 
 const validatePassword = [
+  // body("iduserreq").not().isEmpty().withMessage("Form Wajib Diisi"),
   body("iduserreq").custom(async (value, { req }) => {
+    console.log(value);
     const dataUser = await UserTestSaika.findOne({ _id: value });
     if (dataUser?.konfirmPassword) {
       const validate = await bcrypt.compare(req.body.passwordOld, dataUser.konfirmPassword);

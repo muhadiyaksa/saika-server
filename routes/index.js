@@ -8,7 +8,7 @@ const { login, getUsers } = require("../handler");
 const { buatRoom, addPesan, hapusRoom, getRoom, keluarRoom, joinRoom } = require("../controller/Chats");
 const { checkRoomPersonalChat, getPersonalChat, getAllPersonalChat, updateStatusPersonalChat, updateNotifStatusPersonalChat } = require("../controller/PersonalChat");
 const { validateRegist, validatePassword, validateEvent, validateUniqueCode, validateEmailForUniqueCode, validateResetPassword } = require("../utils/validator");
-const { addEvent } = require("../controller/Event");
+const { addEvent, getEvent } = require("../controller/Event");
 
 router.post("/register", validateRegist, Register);
 router.post("/login", login);
@@ -34,6 +34,7 @@ router.get("/chat/all/:iduser", getAllPersonalChat);
 router.put("/chat/all/:idchat", updateStatusPersonalChat);
 router.put("/chat/notifstatus/:idchat", updateNotifStatusPersonalChat);
 
+router.get("/event/:type", getEvent);
 router.post("/event/addevent", validateEvent, addEvent);
 
 module.exports = router;

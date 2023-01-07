@@ -242,7 +242,7 @@ const updatePassword = async (req, res) => {
       },
       {
         $set: {
-          password: req.body.passwordNew,
+          password: hashedPasswordChecked,
           konfirmPassword: hashedPasswordChecked,
         },
       }

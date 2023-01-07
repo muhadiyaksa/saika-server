@@ -3,8 +3,10 @@ const mongoose = require("mongoose");
 
 const Event = mongoose.model("Event", {
   eventName: { type: String },
+  eventId: { type: String },
   eventImage: { type: String },
   eventCategory: { type: String },
+  institution: { type: String },
   benefits: { type: String },
   description: { type: String },
   eventDate: { type: String },
