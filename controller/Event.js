@@ -72,7 +72,10 @@ const getEvent = async (req, res) => {
   if (req.params.type === "all") {
     const event = await Event.find();
     if (event.length !== 0) {
-      res.send(event);
+      res.send({
+        totalData: event.length,
+        events: event,
+      });
     } else {
       res.status(404).send({
         status: "failed",
@@ -95,10 +98,9 @@ const getEvent = async (req, res) => {
         status: "failed",
         message: "Data gagal diambil.",
       });
-    } finally {
-      console.log("Selesai");
     }
   } else if (req.params.type === "pagination") {
+    //pagination?qty=2&current=1
     const event = await Event.find();
     let eventData = [...event];
     let pagination = +req.query.qty;
@@ -109,6 +111,7 @@ const getEvent = async (req, res) => {
       let data = {
         current: i + 1,
         pagination,
+        totalPagination: forLop,
         events: eventData.slice(0, pagination),
       };
       arrayNew.push(data);
@@ -124,6 +127,98 @@ const getEvent = async (req, res) => {
         message: "Data Tidak Ditemukan",
       });
     }
+  } else if (req.params.type === "search") {
+    const [events, eventsIns] = await Promise.all([Event.find({ eventName: new RegExp(req.query.key, "i") }), Event.find({ institution: new RegExp(req.query.key, "i") })]);
+
+    let mix = [...events, ...eventsIns];
+    let unDuplicate = [...new Map(mix.map((m) => [m.eventId, m])).values()];
+
+    if (unDuplicate.length !== 0) {
+      res.send({
+        key: req.query.key,
+        totalData: unDuplicate.length,
+        events: unDuplicate,
+      });
+    } else {
+      res.status(404).send({
+        status: "failed",
+        message: "Data Tidak Ditemukan",
+      });
+    }
+  } else if (req.params.type === "filter") {
+    let data = [];
+    if (req.query.key !== "DEFAULT") {
+      const [events, eventsIns] = await Promise.all([Event.find({ eventName: new RegExp(req.query.key, "i") }), Event.find({ institution: new RegExp(req.query.key, "i") })]);
+
+      let mix = [...events, ...eventsIns];
+      let unDuplicate = [...new Map(mix.map((m) => [m.eventId, m])).values()];
+
+      if (req.query.category === "DEFAULT" && req.query.paymentType === "DEFAULT") {
+        data = [...unDuplicate];
+      } else if (req.query.category !== "DEFAULT" && req.query.paymentType === "DEFAULT") {
+        let findCategory = unDuplicate.filter((el) => el.eventCategory === req.query.category);
+        data = [...findCategory];
+      } else if (req.query.category === "DEFAULT" && req.query.paymentType !== "DEFAULT") {
+        let findCategory = unDuplicate.filter((el) => el.paymentType === req.query.paymentType);
+        data = [...findCategory];
+      } else {
+        let findCategory = unDuplicate.filter((el) => el.eventCategory === req.query.category && el.paymentType === req.query.paymentType);
+        data = [...findCategory];
+      }
+    } else {
+      if (req.query.category === "DEFAULT" && req.query.paymentType === "DEFAULT") {
+        const eventsAll = await Event.find();
+        data = [...eventsAll];
+      } else if (req.query.category !== "DEFAULT" && req.query.paymentType === "DEFAULT") {
+        const eventsCatg = await Event.find({ eventCategory: req.query.category });
+        data = [...eventsCatg];
+      } else if (req.query.category === "DEFAULT" && req.query.paymentType !== "DEFAULT") {
+        const eventsPaymT = await Event.find({ paymentType: req.query.paymentType });
+        data = [...eventsPaymT];
+      } else {
+        const eventsPayCatg = await Event.find({ eventCategory: req.query.category, paymentType: req.query.paymentType });
+        data = [...eventsPayCatg];
+      }
+    }
+
+    let waiting = new Promise((fulfil, reject) => {
+      if (data.length !== 0) {
+        let pagination = +req.query.qty;
+        let forLop = Math.ceil(data.length / pagination);
+        let arrayNew = [];
+
+        for (let i = 0; i < forLop; i++) {
+          let array = {
+            current: i + 1,
+            pagination,
+            totalPagination: forLop,
+            events: data.slice(0, pagination),
+            totalData: data.length,
+          };
+          arrayNew.push(array);
+          data.splice(0, pagination);
+        }
+
+        let sendData = arrayNew.find((el) => el.current === +req.query.current);
+        return fulfil(sendData);
+      } else {
+        reject(data);
+      }
+    });
+
+    waiting
+      .then((result) => {
+        if (result) {
+          res.send(result);
+        }
+      })
+      .catch((err) => {
+        console.log(err);
+        res.status(404).send({
+          status: "failed",
+          message: "Data tidak ditemukan",
+        });
+      });
   } else {
     res.status(404).send({
       status: "failed",

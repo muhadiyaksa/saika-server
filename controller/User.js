@@ -264,10 +264,14 @@ const sendUniqueCode = async (req, res) => {
   } else {
     let transporter = nodemailer.createTransport({
       service: "hotmail",
+      host: "smtp-mail.outlook.com",
+      secureConnection: false,
+      port: 587,
       auth: {
         user: "getsaika@outlook.com", // generated ethereal user
         pass: "saika@280800", // generated ethereal password
       },
+      from: "getsaika@outlook.com",
     });
 
     const filePath = path.join(__dirname, "../utils/templateEmail.html");
@@ -295,6 +299,7 @@ const sendUniqueCode = async (req, res) => {
       to: req.body.email, // list of receivers
       subject: "Kode Unik Reset Password Akun SAIKA", // Subject line
       html: htmlToSend, // html body
+      text: "Hello Sahabat Informatika, email ini khusus pengiriman Kode Unik Reset Password Aplikasi SAIKA.",
     };
 
     transporter.sendMail(details, (err) => {
