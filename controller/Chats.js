@@ -5,18 +5,26 @@ const { returnFormatDate } = require("../utils/numberFormat");
 
 const buatRoom = async (req, res) => {
   const cekRuangDiskusi = await ChatsSaika.find({ kategori: req.body.kategori });
+
   if (cekRuangDiskusi.length === 0) {
+    let anggota;
+    if (req.body.tipeUser === "unregistered") {
+      anggota = {
+        iduser: req.body.iduser,
+        usernameuser: "anonymous",
+      };
+    } else {
+      anggota = {
+        iduser: req.body.iduser,
+        fotoUser: req.body.fotoUser,
+        namauser: req.body.namauser,
+        usernameuser: req.body.usernameuser,
+      };
+    }
     const dataMasuk = {
       idroom: crypto.randomBytes(64).toString("hex"),
       kategori: req.body.kategori,
-      anggota: [
-        {
-          iduser: req.body.iduser,
-          fotoUser: req.body.fotoUser,
-          namauser: req.body.namauser,
-          usernameuser: req.body.usernameuser,
-        },
-      ],
+      anggota: [anggota],
     };
     ChatsSaika.insertMany(dataMasuk, (error, result) => {
       res.send({ status: "waiting" });
@@ -26,26 +34,47 @@ const buatRoom = async (req, res) => {
     if (cekAnggotaRuangDiskusi) {
       let dataAnggota = cekAnggotaRuangDiskusi.anggota.map((el) => el.iduser);
       if (dataAnggota.includes(req.body.iduser)) {
+        //buat ngecek ni ada ga nih dia di ruangannya, kalo ada (includes) yaudah gausah dimasukin sampe nemu anggota baru
         if (dataAnggota.length > 1 && req.body.percobaan <= 20) {
           res.send({ status: "finish", idroom: cekAnggotaRuangDiskusi.idroom });
         } else if (dataAnggota.length === 1 && req.body.percobaan <= 20) {
           res.send({ status: "waiting" });
         } else {
-          ChatsSaika.deleteMany({ idroom: cekAnggotaRuangDiskusi.idroom }).then(() => {
-            res.send({ status: "rejected" });
-          });
+          ChatsSaika.deleteMany({ idroom: cekAnggotaRuangDiskusi.idroom })
+            .then(() => {
+              res.send({ status: "rejected" });
+            })
+            .catch((err) => {
+              res.status(404).send({
+                status: "failed",
+                message: "Data Gagal Di Delete",
+              });
+            });
         }
       } else {
         if (req.body.percobaan === 0) {
           res.send({ status: "waiting" });
         } else {
-          const dataUser = {
-            iduser: req.body.iduser,
-            fotoUser: req.body.fotoUser,
-            namauser: req.body.namauser,
-            usernameuser: req.body.usernameuser,
-          };
-
+          // const dataUser = {
+          //   iduser: req.body.iduser,
+          //   fotoUser: req.body.fotoUser,
+          //   namauser: req.body.namauser,
+          //   usernameuser: req.body.usernameuser,
+          // };
+          let dataUser;
+          if (req.body.tipeUser === "unregistered") {
+            dataUser = {
+              iduser: req.body.iduser,
+              usernameuser: "anonymous",
+            };
+          } else {
+            dataUser = {
+              iduser: req.body.iduser,
+              fotoUser: req.body.fotoUser,
+              namauser: req.body.namauser,
+              usernameuser: req.body.usernameuser,
+            };
+          }
           ChatsSaika.updateOne(
             { idroom: cekAnggotaRuangDiskusi.idroom },
             {
@@ -123,24 +152,41 @@ const buatRoom = async (req, res) => {
 const joinRoom = async (req, res) => {
   const cekRoom = await ChatsSaika.findOne({ idroom: req.params.idroom });
   if (cekRoom) {
-    let dataUser = {
-      iduser: req.body.iduser,
-      fotoUser: req.body.fotoUser,
-      namauser: req.body.namauser,
-      usernameuser: req.body.usernameuser,
-    };
-    ChatsSaika.updateOne(
-      { idroom: req.params.idroom },
-      {
-        $set: {
-          anggota: [...cekRoom.anggota, dataUser],
-        },
-      }
-    ).then(() => {
+    let idAnggota = cekRoom.anggota.map((el) => el.iduser);
+
+    if (idAnggota.includes(req.body.iduser)) {
       res.send({ status: "finish", idroom: cekRoom.idroom });
-    });
+    } else {
+      let dataUser = {
+        iduser: req.body.iduser,
+        fotoUser: req.body.fotoUser,
+        namauser: req.body.namauser,
+        usernameuser: req.body.usernameuser,
+      };
+      ChatsSaika.updateOne(
+        { idroom: req.params.idroom },
+        {
+          $set: {
+            anggota: [...cekRoom.anggota, dataUser],
+          },
+        }
+      )
+        .then(() => {
+          res.send({ status: "finish", idroom: cekRoom.idroom });
+        })
+        .catch((err) => {
+          console.log(err);
+          res.status(404).send({
+            status: "failed",
+            message: "Gagal Masuk Room",
+          });
+        });
+    }
   } else {
-    res.sendStatus(404);
+    res.status(404).send({
+      status: "failed",
+      message: "Data Tidak Ditemukan",
+    });
   }
 };
 const getRoom = async (req, res) => {
@@ -148,7 +194,10 @@ const getRoom = async (req, res) => {
   if (cekRoom) {
     res.send(cekRoom);
   } else {
-    res.sendStatus(404);
+    res.status(404).send({
+      status: "failed",
+      message: "Data Tidak Ditemukan",
+    });
   }
 };
 

@@ -164,4 +164,5 @@ const validateResetPassword = [
     return true;
   }),
 ];
+
 module.exports = { validateRegist, validatePassword, validateEvent, validateEmailForUniqueCode, validateUniqueCode, validateResetPassword };

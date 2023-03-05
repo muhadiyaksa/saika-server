@@ -2,18 +2,11 @@ const mongoose = require("mongoose");
 const PersonalChatSaika = mongoose.model("PersonalChatSaika", {
   iduserpertama: { type: String },
   iduserkedua: { type: String },
-  userpertama: {
-    nama: { type: String },
-    username: { type: String },
-    fotoProfi: { type: String },
-  },
-  userkedua: {
-    nama: { type: String },
-    username: { type: String },
-    fotoProfi: { type: String },
-  },
-  status: { type: String },
-  statusNotif: { type: String },
+  iduserLastSender: { type: String },
+  statusChatUserPertama: { type: String },
+  statusChatUserKedua: { type: String },
+  statusNotifUserPertama: { type: String },
+  statusNotifUserKedua: { type: String },
   chats: [
     {
       iduser: { type: String },
@@ -31,5 +24,11 @@ const PersonalChatSaika = mongoose.model("PersonalChatSaika", {
       },
     },
   ],
+  createdAt: {
+    type: Date,
+  },
+  updatedAt: {
+    type: Date,
+  },
 });
 module.exports = PersonalChatSaika;

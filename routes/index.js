@@ -6,7 +6,17 @@ const router = express.Router();
 const passport = require("passport");
 const { login, getUsers } = require("../handler");
 const { buatRoom, addPesan, hapusRoom, getRoom, keluarRoom, joinRoom } = require("../controller/Chats");
-const { checkRoomPersonalChat, getPersonalChat, getAllPersonalChat, updateStatusPersonalChat, updateNotifStatusPersonalChat } = require("../controller/PersonalChat");
+const {
+  checkRoomPersonalChat,
+  getPersonalChat,
+  getAllPersonalChat,
+  updateStatusPersonalChat,
+  updateNotifStatusPersonalChat,
+  getAllPersonalChatV2,
+  getListWaitingFriendV2,
+  sendPersonalChats,
+  sendPersonalChatsV2,
+} = require("../controller/PersonalChat");
 const { validateRegist, validatePassword, validateEvent, validateUniqueCode, validateEmailForUniqueCode, validateResetPassword } = require("../utils/validator");
 const { addEvent, getEvent } = require("../controller/Event");
 
@@ -20,6 +30,7 @@ router.put("/chats_detail/:idroom", passport.authenticate("jwt", { session: fals
 router.post("/rejoinchats/:idroom", passport.authenticate("jwt", { session: false }), joinRoom);
 
 router.put("/user/friend/:iduser", addListWaitingFriend);
+router.get("/user/waitingfriend/:iduser", getListWaitingFriendV2);
 router.put("/user/reject-friend/:iduser", rejectWaitingFriend);
 router.put("/user/accept-friend/:iduser", acceptWaitingFriend);
 router.get("/user/friend/:iduser", getFriendProfile);
@@ -30,6 +41,8 @@ router.put("/user/resetpassword", validateResetPassword, resetPassword);
 router.put("/user/profil", passport.authenticate("jwt", { session: false }), updateProfil);
 
 router.post("/chat/room/:iduser", checkRoomPersonalChat);
+router.get("/chat/allv2/:iduser", getAllPersonalChatV2);
+router.post("/chat/send/:iduser", sendPersonalChatsV2);
 router.get("/chat/all/:iduser", getAllPersonalChat);
 router.put("/chat/all/:idchat", updateStatusPersonalChat);
 router.put("/chat/notifstatus/:idchat", updateNotifStatusPersonalChat);
