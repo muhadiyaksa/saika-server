@@ -1,34 +1,29 @@
-const express = require("express");
-
-const { Register, addListWaitingFriend, rejectWaitingFriend, acceptWaitingFriend, getFriendProfile, updatePassword, updateProfil, sendUniqueCode, checkUniqueCode, resetPassword } = require("../controller/User");
 require("../utils/auth");
+const express = require("express");
 const router = express.Router();
 const passport = require("passport");
+
 const { login, getUsers } = require("../handler");
-const { buatRoom, addPesan, hapusRoom, getRoom, keluarRoom, joinRoom } = require("../controller/Chats");
-const {
-  checkRoomPersonalChat,
-  getPersonalChat,
-  getAllPersonalChat,
-  updateStatusPersonalChat,
-  updateNotifStatusPersonalChat,
-  getAllPersonalChatV2,
-  getListWaitingFriendV2,
-  sendPersonalChats,
-  sendPersonalChatsV2,
-} = require("../controller/PersonalChat");
-const { validateRegist, validatePassword, validateEvent, validateUniqueCode, validateEmailForUniqueCode, validateResetPassword } = require("../utils/validator");
+const { Register, addListWaitingFriend, rejectWaitingFriend, acceptWaitingFriend, getFriendProfile, updatePassword, updateProfil, sendUniqueCode, checkUniqueCode, resetPassword } = require("../controller/User");
+const { buatRoom, hapusRoom, getRoom, keluarRoom, joinRoom } = require("../controller/Chats");
+const { checkRoomPersonalChat, getAllPersonalChatV2, getListWaitingFriendV2 } = require("../controller/PersonalChat");
 const { addEvent, getEvent } = require("../controller/Event");
 
+const { validateRegist, validatePassword, validateEvent, validateUniqueCode, validateEmailForUniqueCode, validateResetPassword } = require("../utils/validator");
+
+// ROUTER USER DATA
 router.post("/register", validateRegist, Register);
 router.post("/login", login);
 router.get("/user/:id", passport.authenticate("jwt", { session: false }), getUsers);
+
+// ROUTER CHAT ROOM
 router.post("/chats", buatRoom);
 router.delete("/chat/:idroom", passport.authenticate("jwt", { session: false }), hapusRoom);
 router.get("/chats_detail/:idroom", passport.authenticate("jwt", { session: false }), getRoom);
 router.put("/chats_detail/:idroom", passport.authenticate("jwt", { session: false }), keluarRoom);
 router.post("/rejoinchats/:idroom", passport.authenticate("jwt", { session: false }), joinRoom);
 
+// ROUTER USER ACTIVITY
 router.put("/user/friend/:iduser", addListWaitingFriend);
 router.get("/user/waitingfriend/:iduser", getListWaitingFriendV2);
 router.put("/user/reject-friend/:iduser", rejectWaitingFriend);
@@ -40,14 +35,12 @@ router.put("/user/validateuniquecode", validateUniqueCode, checkUniqueCode);
 router.put("/user/resetpassword", validateResetPassword, resetPassword);
 router.put("/user/profil", passport.authenticate("jwt", { session: false }), updateProfil);
 
-router.post("/chat/room/:iduser", checkRoomPersonalChat);
-router.get("/chat/allv2/:iduser", getAllPersonalChatV2);
-router.post("/chat/send/:iduser", sendPersonalChatsV2);
-router.get("/chat/all/:iduser", getAllPersonalChat);
-router.put("/chat/all/:idchat", updateStatusPersonalChat);
-router.put("/chat/notifstatus/:idchat", updateNotifStatusPersonalChat);
+// ROUTER PERSONAL CHAT
+router.post("/chat/room/:iduser", passport.authenticate("jwt", { session: false }), checkRoomPersonalChat);
+router.get("/chat/allv2/:iduser", passport.authenticate("jwt", { session: false }), getAllPersonalChatV2);
 
+// ROUTER EVENT
 router.get("/event/:type", getEvent);
-router.post("/event/addevent", validateEvent, addEvent);
+router.post("/event/addevent", validateEvent, passport.authenticate("jwt", { session: false }), addEvent);
 
 module.exports = router;

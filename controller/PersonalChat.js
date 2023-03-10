@@ -52,87 +52,6 @@ const checkRoomPersonalChat = async (req, res) => {
   }
 };
 
-const getPersonalChat = async (req, res) => {
-  const [dataUser, dataChat, dataChat2] = await Promise.all([UserTestSaika.findOne({ _id: req.params.iduser }), PersonalChatSaika.find({ iduserpertama: req.params.iduser }), PersonalChatSaika.find({ iduserkedua: req.params.iduser })]);
-
-  // Cukup ambil dari parameter ID Chat
-  // Update statusChat and statusNotif
-  // Kalo misal iduserpertama ===  req.params.iduser (ini tandanya update statusChat dan statuNotif untuk UserKedua)
-  // Kalo misal iduserpertama !==  req.params.iduser (ini tandanya update statusChat dan statuNotif untuk UserPertama)
-  // Lalu Balikin Hasil dari findAll PersonalChat dari user yang punya id masing2
-  if (dataUser && dataChat && dataChat2) {
-    let gabunganDataChat = [...dataChat, ...dataChat2];
-    let dataFriend = dataUser.listFriends.map((el) => el.iduser);
-    let hasil = gabunganDataChat.map((el) => {
-      if (el.iduserpertama === req.params.iduser) {
-        if (dataFriend.includes(el.iduserkedua)) {
-          let dataMasuk = {
-            idfriend: el.iduserkedua,
-            status: el.chats[0]?.iduser !== req.params.iduser ? "active" : "null",
-            statusNotif: el.chats[0]?.iduser !== req.params.iduser ? "active" : "null",
-          };
-
-          return dataMasuk;
-        }
-      } else {
-        if (dataFriend.includes(el.iduserpertama)) {
-          let dataMasuk = {
-            idfriend: el.iduserpertama,
-            status: el.chats[0]?.iduser !== req.params.iduser ? "active" : "null",
-            statusNotif: el.chats[0]?.iduser !== req.params.iduser ? "active" : "null",
-          };
-          return dataMasuk;
-        }
-      }
-    });
-    res.send(hasil);
-  }
-};
-
-const getAllPersonalChat = async (req, res) => {
-  const [personalChat1, personalChat2, dataUser] = await Promise.all([
-    PersonalChatSaika.find({ iduserpertama: req.params.iduser }),
-    PersonalChatSaika.find({ iduserkedua: req.params.iduser }),
-    UserTestSaika.findOne({ _id: req.params.iduser }),
-  ]);
-
-  if (dataUser && personalChat1 && personalChat2) {
-    let dataGabung = [...personalChat1, ...personalChat2];
-    let dataFriend = dataUser.listFriends.map((el) => el.iduser); // buat ngembaliin ID temen2nya
-    console.log("datagabung", dataGabung);
-
-    let hasil = dataGabung.map((el) => {
-      if (el.iduserpertama === req.params.iduser) {
-        if (dataFriend.includes(el.iduserkedua)) {
-          let dataArray = {
-            idchat: el._id,
-            idfriend: el.iduserkedua,
-            status: el.status,
-            statusNotif: el.statusNotif,
-            iduserLastSender: el.chats[0]?.iduser || null,
-            // username: el.chats[0]?.usernameuser || null,
-          };
-          return dataArray;
-        }
-      } else {
-        if (dataFriend.includes(el.iduserpertama)) {
-          let dataArray = {
-            idchat: el._id,
-            idfriend: el.iduserpertama,
-            status: el.status,
-            statusNotif: el.statusNotif,
-            iduserLastSender: el.chats[0]?.iduser || null,
-            // username: el.chats[0]?.usernameuser || null,
-          };
-          return dataArray;
-        }
-      }
-    });
-    console.log("hasil", hasil);
-    res.send(hasil);
-  }
-};
-
 const getPersonalChatV2 = async (dataChat, dataUser) => {
   const updateStatus = await PersonalChatSaika.findOneAndUpdate(
     {
@@ -232,50 +151,6 @@ const getListWaitingFriendV2 = async (req, res) => {
   }
 };
 
-const updateStatusPersonalChat = async (req, res) => {
-  PersonalChatSaika.findOneAndUpdate(
-    {
-      _id: req.params.idchat,
-    },
-    {
-      $set: {
-        status: "null",
-        statusNotif: "null",
-      },
-    }
-  ).then(() => {
-    res.send({ status: "success" });
-  });
-};
-
-const updateNotifStatusPersonalChat = async (req, res) => {
-  console.log("yaaa param", req.params.idchat);
-  PersonalChatSaika.findOneAndUpdate(
-    {
-      _id: req.params.idchat,
-    },
-    {
-      $set: {
-        statusNotif: "null",
-      },
-    }
-  ).then(() => {
-    res.send({ status: "success" });
-  });
-};
-
-const sendPersonalChatsV2 = async (req, res) => {
-  const dataKirim = {
-    idchat: req.body.idchat,
-    iduser: req.params.iduser,
-    idfriend: req.body.idfriend,
-    pesanKirim: req.body.pesanKirim,
-  };
-
-  socket.emit("send_message_pc", dataKirim);
-  socket.emit("active_or_close_message", dataKirim);
-};
-
 const sendPersonalChats = async (data) => {
   console.log(data);
   const [dataChat, dataUser] = await Promise.all([PersonalChatSaika.findOne({ _id: data.idchat }), UserTestSaika.findOne({ _id: Object(data.iduser) })]);
@@ -312,102 +187,12 @@ const sendPersonalChats = async (data) => {
   }
 };
 
-const activeMessage = async (data) => {
-  console.log("active message", data);
-  const dataChat = await PersonalChatSaika.findOne({ _id: data.idchat });
-  if (dataChat) {
-    let result = await PersonalChatSaika.updateOne(
-      { _id: data.idchat },
-      {
-        $set: {
-          status: "active",
-          statusNotif: "active",
-        },
-      }
-    );
-    if (result) {
-      // ini buat apaan ya
-      const [personalChat1, personalChat2, dataUser] = await Promise.all([PersonalChatSaika.find({ iduserpertama: data.iduser }), PersonalChatSaika.find({ iduserkedua: data.iduser }), UserTestSaika.findOne({ _id: data.iduser })]);
-      let idPenerimaNotif;
-      if (dataUser && personalChat2 && personalChat1) {
-        let dataGabung = [...personalChat1, ...personalChat2];
-
-        let hasil = dataGabung.map((el) => {
-          if (el.iduserpertama === data.iduser) {
-            idPenerimaNotif = el.iduserkedua;
-            let dataArray = {
-              idchat: el._id,
-              idfriend: el.iduserpertama,
-              status: el.status,
-              statusNotif: el.statusNotif,
-              iduserLastSender: el.chats[0]?.iduser || null,
-              // username: el.chats[0]?.usernameuser || null,
-            };
-            return dataArray;
-          } else {
-            idPenerimaNotif = el.iduserpertama;
-
-            let dataArray = {
-              idchat: el._id,
-              idfriend: el.iduserkedua,
-              status: el.status,
-              statusNotif: el.statusNotif,
-              iduserLastSender: el.chats[0]?.iduser || null,
-              // username: el.chats[0]?.usernameuser || null,
-            };
-
-            return dataArray;
-          }
-        });
-        return { value: true, idPenerimaNotif, hasil };
-      }
-    }
-  }
-};
-
-const closedMessage = async (data) => {
-  const [personalChat1, personalChat2, dataUser] = await Promise.all([PersonalChatSaika.find({ iduserpertama: data.iduser }), PersonalChatSaika.find({ iduserkedua: data.iduser }), UserTestSaika.findOne({ _id: data.iduser })]);
-
-  if ((dataUser && personalChat1, personalChat2)) {
-    let dataGabung = [...personalChat1, ...personalChat2];
-    let hasil = dataGabung.map((el) => {
-      if (el.iduserpertama === data.iduser) {
-        let dataArray = {
-          idchat: el._id,
-          idfriend: el.iduserkedua,
-          status: el.status,
-          statusNotif: el.statusNotif,
-          iduserLastSender: el.chats[0]?.iduser || null,
-          // username: el.chats[0]?.usernameuser || null,
-        };
-        return dataArray;
-      } else {
-        let dataArray = {
-          idchat: el._id,
-          idfriend: el.iduserpertama,
-          status: el.status,
-          statusNotif: el.statusNotif,
-          iduserLastSender: el.chats[0]?.iduser || null,
-          // username: el.chats[0]?.usernameuser || null,
-        };
-        return dataArray;
-      }
-    });
-    return { value: true, hasil };
-  }
-};
 module.exports = {
   checkRoomPersonalChat,
-  getPersonalChat,
-  getAllPersonalChat,
-  updateStatusPersonalChat,
-  updateNotifStatusPersonalChat,
+
   sendPersonalChats,
-  activeMessage,
-  closedMessage,
   getAllPersonalChatV2,
   getListWaitingFriendV2,
   getAllPersonalChatV2withOutReq,
   activeOrCloseMessageV2,
-  sendPersonalChatsV2,
 };

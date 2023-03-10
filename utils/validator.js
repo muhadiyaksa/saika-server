@@ -58,8 +58,6 @@ const validateEvent = [
   body("benefits").not().isEmpty().withMessage("Benefits wajib diisi"),
   body("descriptions").not().isEmpty().withMessage("Deskripsi Acara wajib diisi"),
   body("eventDate").not().isEmpty().withMessage("Event Date Harus Diisi!"),
-  body("eventTimeStart").not().isEmpty().withMessage("Jam Mulai Harus Diisi!"),
-  body("eventTimeFinish").not().isEmpty().withMessage("Jam Selesai Harus Diisi!"),
   body("eventDate").custom(async (value, { req }) => {
     let tahun = new Date().getFullYear(),
       bulan = new Date().getMonth() + 1,

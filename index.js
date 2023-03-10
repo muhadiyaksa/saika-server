@@ -10,7 +10,7 @@ require("./utils/db");
 const UserTestSaika = require("./model/User");
 const ChatsSaika = require("./model/Chats");
 
-const { sendPersonalChats, getAllPersonalChatV2, activeOrCloseMessageV2 } = require("./controller/PersonalChat");
+const { sendPersonalChats, activeOrCloseMessageV2 } = require("./controller/PersonalChat");
 const { addPesan, notifKeluar, keluarRoom, notifMasuk } = require("./controller/Chats");
 
 dotenv.config();
@@ -139,12 +139,12 @@ io.on("connection", (socket) => {
     }
   });
 
-  socket.on("close_active_message", async (data) => {
-    const result = await activeOrCloseMessageV2(data);
-    if (result?.value) {
-      io.to(result?.iduserpertama).to(result?.iduserkedua).emit("pesan_aktif", result.hasil);
-    }
-  });
+  // socket.on("close_active_message", async (data) => {
+  //   const result = await activeOrCloseMessageV2(data);
+  //   if (result?.value) {
+  //     io.to(result?.iduserpertama).to(result?.iduserkedua).emit("pesan_aktif", result.hasil);
+  //   }
+  // });
 
   socket.on("disconnect", async function () {
     let data = {

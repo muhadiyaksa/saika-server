@@ -34,6 +34,7 @@ const addEvent = async (req, res) => {
         benefits: req.body.benefits,
         description: req.body.descriptions,
         eventDate: req.body.eventDate,
+        eventDateEnd: req.body.eventDateEnd,
         eventTimeStart: req.body.eventTimeStart,
         eventTimeFinish: req.body.eventTimeFinish,
         paymentType: req.body.paymentType,
@@ -85,8 +86,9 @@ const getEvent = async (req, res) => {
   } else if (req.params.type === "single") {
     try {
       const event = await Event.findOne({ eventId: req.query.id });
+
       if (event) {
-        res.send(event);
+        res.send({ status: "success", event });
       } else {
         res.status(404).send({
           status: "failed",
