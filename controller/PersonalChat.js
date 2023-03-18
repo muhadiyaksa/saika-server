@@ -102,10 +102,12 @@ const getAllPersonalChatV2withOutReq = async (dataFriend, iduser) => {
       username: profileFriend.username,
     };
     let dataChat = !checkRoomPenerima ? checkRoomPengirim : checkRoomPenerima;
+
     hasil.push({ ...dataProfileFriend, dataChat });
   }
+  let result = hasil.sort((a, b) => new Date(b.dataChat.updatedAt) - new Date(a.dataChat.updatedAt));
 
-  return hasil;
+  return result;
 };
 
 const activeOrCloseMessageV2 = async (data) => {
@@ -175,6 +177,7 @@ const sendPersonalChats = async (data) => {
           statusChatUserKedua: data.iduser === dataChat.iduserkedua && data.idfriend === dataChat.iduserpertama ? "null" : "active",
           statusNotifUserKedua: data.iduser === dataChat.iduserkedua && data.idfriend === dataChat.iduserpertama ? "null" : "active",
           chats: [dataKirim, ...dataChat.chats],
+          updatedAt: new Date(),
         },
       }
     );
@@ -189,7 +192,6 @@ const sendPersonalChats = async (data) => {
 
 module.exports = {
   checkRoomPersonalChat,
-
   sendPersonalChats,
   getAllPersonalChatV2,
   getListWaitingFriendV2,

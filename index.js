@@ -112,6 +112,7 @@ io.on("connection", (socket) => {
   socket.on("anggota_masuk", async (data) => {
     const result = notifMasuk(data);
     if (result?.value) {
+      console.log("notif masuk", result);
       io.to(data.idroom).emit("pesan_terima", result.dataChatNew);
     }
   });
@@ -127,7 +128,6 @@ io.on("connection", (socket) => {
     const result = await sendPersonalChats(data);
     if (result.newResult) {
       io.to(result.newResult.iduserpertama).to(result.newResult.iduserkedua).emit("pesan_terima_pc", result.newResult);
-      // socket.to(result.newResult.iduserkedua).emit("pesan_terima_pc", result.newResult);
     }
   });
 
@@ -138,13 +138,6 @@ io.on("connection", (socket) => {
       io.to(data.idfriend).emit("pesan_aktif", result.hasilFriend);
     }
   });
-
-  // socket.on("close_active_message", async (data) => {
-  //   const result = await activeOrCloseMessageV2(data);
-  //   if (result?.value) {
-  //     io.to(result?.iduserpertama).to(result?.iduserkedua).emit("pesan_aktif", result.hasil);
-  //   }
-  // });
 
   socket.on("disconnect", async function () {
     let data = {

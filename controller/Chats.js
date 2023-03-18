@@ -201,6 +201,18 @@ const getRoom = async (req, res) => {
   }
 };
 
+const getRoomAnonymous = async (req, res) => {
+  const cekRoom = await ChatsSaika.findOne({ idroom: req.params.idroom });
+  if (cekRoom) {
+    res.send(cekRoom);
+  } else {
+    res.status(404).send({
+      status: "failed",
+      message: "Data Tidak Ditemukan",
+    });
+  }
+};
+
 const addPesan = async (data) => {
   const [dataChat, dataUser] = await Promise.all([ChatsSaika.findOne({ idroom: data.idroom }), UserTestSaika.findOne({ _id: Object(data.iduser) })]);
 
@@ -259,9 +271,12 @@ const notifKeluar = async (data) => {
   const [cekUser, cekRoom] = await Promise.all([UserTestSaika.findOne({ _id: data.iduser }), ChatsSaika.findOne({ idroom: data.idroom })]);
 
   if (cekUser && cekRoom) {
+    const formatDate = returnFormatDate();
     let dataKirim = {
+      iduser: data.iduser,
       kondisi: "keluar",
       namauser: cekUser.nama,
+      tanggal: formatDate.tanggalKirim,
     };
     // if (cekRoom.chats[0].kondisi !== dataKirim.kondisi && cekRoom.chats[0].namauser !== dataKirim.namauser) {
     console.log(dataKirim);
@@ -293,10 +308,12 @@ const notifMasuk = async (data) => {
       }
     });
     if (!dataChats.includes(data.iduser)) {
+      const formatDate = returnFormatDate();
       let dataKirim = {
         iduser: data.iduser,
         kondisi: "masuk",
         namauser: cekUser.nama,
+        tanggal: formatDate.tanggalKirim,
       };
       let result = await ChatsSaika.findOneAndUpdate(
         { idroom: data.idroom },
