@@ -35,8 +35,48 @@ const ChatsSaika = mongoose.model("ChatsSaika", {
       pesan: {
         type: String,
       },
+      image: {
+        type: Boolean,
+      },
+      imageName: {
+        type: String,
+      },
+      imageUrl: {
+        type: String,
+      },
+      hightlight: {
+        type: Boolean,
+      },
+      idHighlight: {
+        type: String,
+      },
+      eventImage: {
+        type: String,
+      },
+      eventName: {
+        type: String,
+      },
+      institution: {
+        type: String,
+      },
+      eventCategory: {
+        type: String,
+      },
+      eventDate: {
+        type: String,
+      },
+      paymentType: {
+        type: String,
+      },
+      price: {
+        type: String,
+      },
     },
   ],
+  createdAt: {
+    type: Date,
+    required: true,
+  },
 });
 
 // const chats = new ChatsSaika({

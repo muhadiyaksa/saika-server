@@ -89,6 +89,7 @@ io.on("connection", (socket) => {
 
   socket.on("send_message", async (data) => {
     const result = await addPesan(data);
+    console.log("data send message =>>>>>", data);
 
     if (result) {
       io.to(data.idroom).emit("pesan_terima", result.dataChatNew);
@@ -110,10 +111,11 @@ io.on("connection", (socket) => {
   });
 
   socket.on("anggota_masuk", async (data) => {
-    const result = notifMasuk(data);
+    const result = await notifMasuk(data);
+    console.log("notif masuk =>>>>>>>>>>>>>>>>>>>>", result);
     if (result?.value) {
-      console.log("notif masuk", result);
       io.to(data.idroom).emit("pesan_terima", result.dataChatNew);
+      io.to(data.idroom).emit("data_anggota_baru", result.isNew);
     }
   });
 

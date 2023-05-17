@@ -1,6 +1,6 @@
 const mongoose = require("mongoose");
 
-const url = `mongodb+srv://tongkrongin:tongkrongin2022@tongkrongin.i1nix.mongodb.net/tongkrongin?retryWrites=true&w=majority`;
+const url = `mongodb+srv://tongkrongin:tongkrongin2022@tongkrongin.i1nix.mongodb.net/tongkrongin?retryWrites=true&w=majority&ssl=true`;
 
 const connectionParams = {
   useNewUrlParser: true,

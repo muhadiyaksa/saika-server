@@ -18,11 +18,11 @@ router.get("/user/:id", passport.authenticate("jwt", { session: false }), getUse
 
 // ROUTER CHAT ROOM
 router.post("/chats", buatRoom);
-router.delete("/chat/:idroom", passport.authenticate("jwt", { session: false }), hapusRoom);
+router.delete("/chat/:idroom", hapusRoom);
 // router.get("/chats_detail_anony/:idroom", getRoomAnonymous);
 router.get("/chats_detail/:idroom", getRoom);
 router.put("/chats_detail/:idroom", passport.authenticate("jwt", { session: false }), keluarRoom);
-router.post("/rejoinchats/:idroom", passport.authenticate("jwt", { session: false }), joinRoom);
+router.post("/rejoinchats/:idroom", joinRoom);
 
 // ROUTER USER ACTIVITY
 router.put("/user/friend/:iduser", addListWaitingFriend);
